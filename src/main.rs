@@ -142,11 +142,11 @@ fn main() {
     write_wav("out/racecar.wav", 44100, make_sample_16(15.0, 44100, |t: f64| -> f64 {
         let mut rng = rand::task_rng();
         let mut out = 0.0;
-        if t < 14.0 { out += SawtoothWave(20.315 * (t / 2.0))(t); } // Engine
-        if t < 1.0 { out += SawtoothWave(15.0)(t) * 10.0; } // Engine start
-        if t < 14.0 && t.tan() > 0.0 { out += SquareWave(t.fract() * 261.625)(t); } // Gear
-        if t < 14.0 && t.tan() < 0.0 { out += SquareWave(t.sin() * 523.25)(t); } // Gear
-        if t < 14.0 && t.tan() > 0.866 { out += SquareWave(t.fract() * 1046.5)(t); } // Gear
+        if t < 14.0 { out += SawtoothWave(40.63 * (t / 2.0))(t); } // Engine
+        if t < 1.0 { out += SawtoothWave(30.0)(t) * 10.0; } // Engine start
+        if t < 14.0 && t.tan() > 0.0 { out += SquareWave(t.fract() * 130.8125)(t); } // Gear
+        if t < 14.0 && t.tan() < 0.0 { out += SquareWave(t.sin() * 261.625)(t); } // Gear
+        if t < 14.0 && t.tan() > 0.866 { out += SquareWave(t.fract() * 523.25)(t); } // Gear
         if t > 14.0 { out += (rng.gen::<f64>() - 0.5) * 8.0 } // Tree
         (out / 4.0).min(1.0)
     })).ok();
