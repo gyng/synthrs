@@ -18,3 +18,7 @@ This generates PCM files which can be opened in Audacity.
 * Little-endian
 * 1 Channel (Mono)
 * Sample rate: 44100Hz
+
+## License
+
+synthrs is licensed under the MIT License. See `LICENSE` for details.
