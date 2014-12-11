@@ -14,12 +14,23 @@ impl Fn<(f64, ), f64> for SinWave {
     }
 }
 
+struct SquareWave(pub f64);
+
+impl Fn<(f64, ), f64> for SquareWave {
+    extern "rust-call" fn call(&self, (x, ): (f64, )) -> f64 {
+        let SquareWave(period) = *self;
+        let sin_wave = SinWave(period);
+        if sin_wave(x).is_positive() { 1.0 } else { -1.0 }
+    }
+}
+
 fn main() {
     println!("Hello, synthrs!");
 
     let mut bytes: [u8, ..44100] = unsafe { mem::uninitialized() };
     for i in range(0u, 44100) {
-        bytes[i] = quantize_8bit(generate(i as f64, SinWave(1000.0)))
+        // bytes[i] = quantize_8bit(generate(i as f64, SinWave(1000.0)))
+        bytes[i] = quantize_8bit(generate(i as f64, SquareWave(1000.0)))
         // bytes[i] = generate(i as f64, |x: f64| {
         //    FloatMath::sin(x / 8000.0)
         // });
