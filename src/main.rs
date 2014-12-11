@@ -116,15 +116,25 @@ fn write_wav(filename: &str, sample_rate: uint, samples: Vec<i16>) -> IoResult<(
 fn main() {
     println!("Hello, synthrs!");
 
-    write_pcm("sin.pcm", make_sample_16(1.0, 44100, SinWave(1000.0))).ok();
-    write_wav("sin.wav", 44100, make_sample_16(1.0, 44100, SinWave(1000.0))).ok();
-    write_wav("square.wav", 44100, make_sample_16(1.0, 44100, SquareWave(1000.0))).ok();
-    write_wav("sawtooth.wav", 44100, make_sample_16(1.0, 44100, SawtoothWave(1000.0))).ok();
-    write_wav("noise.wav", 44100, make_sample_16(1.0, 44100, |_t: f64| -> f64 {
+    write_pcm("out/sin.pcm", make_sample_16(1.0, 44100, SinWave(1000.0))).ok();
+    write_wav("out/sin.wav", 44100, make_sample_16(1.0, 44100, SinWave(1000.0))).ok();
+    write_wav("out/square.wav", 44100, make_sample_16(1.0, 44100, SquareWave(1000.0))).ok();
+    write_wav("out/sawtooth.wav", 44100, make_sample_16(1.0, 44100, SawtoothWave(1000.0))).ok();
+
+    write_wav("out/wolftone.wav", 44100, make_sample_16(1.0, 44100, |t: f64| -> f64 {
+        SinWave(1000.0)(t) + SinWave(1010.0)(t)
+    })).ok();
+
+    write_wav("out/whitenoise.wav", 44100, make_sample_16(1.0, 44100, |_t: f64| -> f64 {
         let mut rng = rand::task_rng();
         (rng.gen::<f64>() - 0.5) * 2.0
     })).ok();
-    write_wav("wolftone.wav", 44100, make_sample_16(1.0, 44100, |t: f64| -> f64 {
-        SinWave(1000.0)(t) + SinWave(1010.0)(t)
+
+    write_wav("out/rising.wav", 44100, make_sample_16(1.0, 44100, |t: f64| -> f64 {
+        let (min_f, max_f) = (1000.0, 8000.0);
+        let max_t = 1.0; // Duration of clip in seconds
+        let range = max_f - min_f;
+        let f = max_f - (max_t - t) * range;
+        SinWave(f)(t)
     })).ok();
 }
