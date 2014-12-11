@@ -122,7 +122,7 @@ fn main() {
     write_wav("out/sawtooth.wav", 44100, make_sample_16(1.0, 44100, SawtoothWave(1000.0))).ok();
 
     write_wav("out/wolftone.wav", 44100, make_sample_16(1.0, 44100, |t: f64| -> f64 {
-        SinWave(1000.0)(t) + SinWave(1010.0)(t)
+        (SquareWave(1000.0)(t) + SquareWave(1020.0)(t)) / 2.0
     })).ok();
 
     write_wav("out/whitenoise.wav", 44100, make_sample_16(1.0, 44100, |_t: f64| -> f64 {
@@ -136,5 +136,17 @@ fn main() {
         let range = max_f - min_f;
         let f = max_f - (max_t - t) * range;
         SinWave(f)(t)
+    })).ok();
+
+    write_wav("out/racecar.wav", 44100, make_sample_16(15.0, 44100, |t: f64| -> f64 {
+        let mut rng = rand::task_rng();
+        let mut out = 0.0;
+        if t < 14.0 { out += SawtoothWave(40.63 * (t / 2.0))(t); } // Engine
+        if t < 1.0 { out += SawtoothWave(30.0)(t) * 10.0; } // Engine start
+        if t < 14.0 && t.tan() > 0.0 { out += SquareWave(t.fract() * 523.25)(t); } // Gear
+        if t < 14.0 && t.tan() < 0.0 { out += SquareWave(t.sin() * 1046.5)(t); } // Gear
+        if t < 14.0 && t.tan() > 0.866 { out += SquareWave(t.fract() * 2093.0)(t); } // Gear
+        if t > 14.0 { out += (rng.gen::<f64>() - 0.5) * 8.0 } // Tree
+        (out / 4.0).min(1.0)
     })).ok();
 }
