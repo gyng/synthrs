@@ -8,7 +8,7 @@ Edit `main.rs` to generate the sound you want then
 
     cargo run
 
-This generates PCM files which can be opened in Audacity.
+This generates WAV or PCM files which can be opened in Audacity.
 
 ### Audacity PCM import settings
 
