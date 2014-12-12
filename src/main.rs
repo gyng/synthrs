@@ -61,14 +61,11 @@ fn lowpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
 
     // Normalize
     let sum = filter.iter().fold(0.0, |acc, el| {
-        println!("{} {} {}", acc, el, acc + *el);
         acc + *el
     });
 
     filter.iter().map(|el| {
-        // println!("{}", *el / sum);
         *el / sum
-        // *el
     }).collect()
 }
 
@@ -77,10 +74,9 @@ fn convolve(filter: Vec<f64>, input: Vec<f64>) -> Vec<f64> {
     for i in range(filter.len() / 2, input.len() - filter.len() / 2) {
         let mut sum = 0.0;
         for j in range(0u, filter.len()) {
-            if i + j > input.len() { continue; }
             sum += input[i + j - filter.len() / 2] * filter[j];
         }
-        output[i] = sum / filter.len() as f64;
+        output[i] = sum;
     }
     output
 }
@@ -270,9 +266,9 @@ fn main() {
     })).ok().expect("failed");
 
     // Lowpass filter/convolution example
-    let filter = lowpass_filter(0.1, 0.08);
+    let filter = lowpass_filter(1.0, 0.08);
     let sample = make_sample(1.0, 44100, |t: f64| -> f64 {
-        0.5 * (SineWave(6000.0)(t) + SineWave(1500.0)(t))
+        0.5 * (SineWave(8000.0)(t) + SineWave(80.0)(t))
     });
     write_wav("out/lowpass.wav", 44100,
         quantize_sample_16(sample.clone()) + quantize_sample_16(convolve(filter, sample))
@@ -284,6 +280,6 @@ fn main() {
 fn it_convolves() {
     let filter = vec!(1.0, 1.0, 1.0);
     let input = vec!(0.0, 3.0, 0.0, 3.0, 0.0);
-    let output = vec!(0.0, 1.0, 2.0, 1.0, 0.0);
+    let output = vec!(0.0, 3.0, 6.0, 3.0, 0.0);
     assert_eq!(convolve(filter, input), output);
 }
