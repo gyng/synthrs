@@ -163,4 +163,8 @@ fn main() {
         + tone_a5(t_mod) * progress
         + tone_a3(t_mod) + tone_a4(t_mod)) / 4.0
     })).ok();
+
+    write_wav("out/dialtone.wav", 44100, make_sample_16(30.0, 44100, |t: f64| -> f64 {
+        0.5 * (SineWave(350.0)(t) + SineWave(440.0)(t))
+    })).ok().expect("failed");
 }
