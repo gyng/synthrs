@@ -37,7 +37,7 @@ impl Fn<(f64, ), f64> for SawtoothWave {
 }
 
 /// Cutoff: fraction of sample rate (eg. frequencies below sample_rate / cutoff are preserved)
-/// Transition band: fraction of sample rate
+/// Transition band: fraction of sample rate (how harsh a cutoff this is)
 fn lowpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
     let mut n = (4.0 / band).ceil() as uint;
     if n % 2 == 1 { n += 1; }
@@ -69,16 +69,61 @@ fn lowpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
     }).collect()
 }
 
+fn highpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
+    spectral_invert(lowpass_filter(cutoff, band))
+}
+
+fn bandpass_filter(low_frequency: f64, high_frequency: f64, band: f64) -> Vec<f64> {
+    assert!(low_frequency <= high_frequency);
+    let lowpass = lowpass_filter(high_frequency, band);
+    let highpass = highpass_filter(low_frequency, band);
+    convolve(highpass, lowpass)
+}
+
+fn bandreject_filter(low_frequency: f64, high_frequency: f64, band: f64) -> Vec<f64> {
+    assert!(low_frequency <= high_frequency);
+    let lowpass = lowpass_filter(low_frequency, band);
+    let highpass = highpass_filter(high_frequency, band);
+    add(highpass, lowpass)
+}
+
+fn spectral_invert(filter: Vec<f64>) -> Vec<f64> {
+    assert_eq!(filter.len() % 2, 0);
+    let mut count = 0;
+
+    filter.iter().map(|el| {
+        let add = if count == filter.len() / 2 { 1.0 } else { 0.0 };
+        count += 1;
+        -*el + add
+    }).collect()
+}
+
+// Output will be longer than input as we add to border
 fn convolve(filter: Vec<f64>, input: Vec<f64>) -> Vec<f64> {
-    let mut output: Vec<f64> = input.clone();
-    for i in range(filter.len() / 2, input.len() - filter.len() / 2) {
-        let mut sum = 0.0;
-        for j in range(0u, filter.len()) {
-            sum += input[i + j - filter.len() / 2] * filter[j];
+    let mut output: Vec<f64> = Vec::new();
+    let h_len = (filter.len() / 2) as int;
+
+    for i in range(-(filter.len() as int / 2), input.len() as int - 1) {
+        output.push(0.0);
+        for j in range(0i, filter.len() as int) {
+            let input_idx = i + j;
+            let output_idx = i + h_len;
+            if input_idx < 0 || input_idx >= input.len() as int { continue; }
+            output[output_idx as uint] += input[input_idx as uint] * filter[j as uint]
         }
-        output[i] = sum;
     }
+
     output
+}
+
+fn add(left: Vec<f64>, right: Vec<f64>) -> Vec<f64> {
+    left.iter().zip(right.iter()).map(|tup| {
+        *tup.val0() + *tup.val1()
+    }).collect()
+}
+
+fn cutoff_from_frequency(frequency: f64, sample_rate: uint) -> f64 {
+    frequency / sample_rate as f64
 }
 
 fn generate<F>(x: f64, f: F) -> f64 where F: Fn<(f64, ), f64> {
@@ -265,13 +310,37 @@ fn main() {
         }
     })).ok().expect("failed");
 
-    // Lowpass filter/convolution example
-    let filter = lowpass_filter(1.0, 0.08);
+    // Lowpass/highpass filter convolution example
     let sample = make_sample(1.0, 44100, |t: f64| -> f64 {
-        0.5 * (SineWave(8000.0)(t) + SineWave(80.0)(t))
+        0.33 * (SineWave(6000.0)(t) + SineWave(700.0)(t) + SineWave(80.0)(t))
     });
+
+    let lowpass = lowpass_filter(cutoff_from_frequency(400.0, 44100), 0.01);
     write_wav("out/lowpass.wav", 44100,
-        quantize_sample_16(sample.clone()) + quantize_sample_16(convolve(filter, sample))
+        quantize_sample_16(sample.clone()) + quantize_sample_16(convolve(lowpass.clone(), sample.clone()))
+    ).ok().expect("Failed");
+
+    let highpass = highpass_filter(cutoff_from_frequency(2000.0, 44100), 0.01);
+    write_wav("out/highpass.wav", 44100,
+        quantize_sample_16(sample.clone()) + quantize_sample_16(convolve(highpass.clone(), sample.clone()))
+    ).ok().expect("Failed");
+
+    let bandpass = bandpass_filter(
+        cutoff_from_frequency(500.0, 44100),
+        cutoff_from_frequency(3000.0, 44100),
+        0.01
+    );
+    write_wav("out/bandpass.wav", 44100,
+        quantize_sample_16(sample.clone()) + quantize_sample_16(convolve(bandpass.clone(), sample.clone()))
+    ).ok().expect("Failed");
+
+    let bandreject = bandreject_filter(
+        cutoff_from_frequency(400.0, 44100),
+        cutoff_from_frequency(2000.0, 44100),
+        0.01
+    );
+    write_wav("out/bandreject.wav", 44100,
+        quantize_sample_16(sample.clone()) + quantize_sample_16(convolve(bandreject.clone(), sample.clone()))
     ).ok().expect("Failed");
 }
 
@@ -279,7 +348,7 @@ fn main() {
 #[test]
 fn it_convolves() {
     let filter = vec!(1.0, 1.0, 1.0);
-    let input = vec!(0.0, 3.0, 0.0, 3.0, 0.0);
-    let output = vec!(0.0, 3.0, 6.0, 3.0, 0.0);
+    let input = vec!(0.0, 0.0, 3.0, 0.0, 3.0, 0.0, 0.0);
+    let output = vec!(0.0, 3.0, 3.0, 6.0, 3.0, 3.0, 0.0);
     assert_eq!(convolve(filter, input), output);
 }
