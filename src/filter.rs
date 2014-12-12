@@ -101,3 +101,11 @@ fn it_convolves() {
     let output = vec!(0.0, 3.0, 3.0, 6.0, 3.0, 3.0, 0.0);
     assert_eq!(convolve(filter, input), output);
 }
+
+#[test]
+fn it_does_elementwise_addition_of_two_samples() {
+    let a = vec!(1.0, -1.0, -8.0);
+    let b = vec!(-1.0, 5.0, 3.0);
+    let expected = vec!(0.0, 4.0, -5.0);
+    assert_eq!(add(a, b), expected);
+}
