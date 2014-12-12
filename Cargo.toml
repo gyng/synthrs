@@ -6,3 +6,23 @@ authors = [
     "ng.guoyou@gmail.com",
     "stacey.ell@gmail.com"
 ]
+
+[lib]
+
+name = "synthrs"
+path = "src/main.rs"
+
+[[example]]
+
+name = "simple"
+path = "examples/simple.rs"
+
+[[example]]
+
+name = "telecoms"
+path = "examples/telecoms.rs"
+
+[[example]]
+
+name = "filters"
+path = "examples/filters.rs"
