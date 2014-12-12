@@ -1,6 +1,8 @@
 # synthrs
 
-Toy synthesiser library in Rust.
+[![Build Status](https://travis-ci.org/gyng/synthrs.svg)](https://travis-ci.org/gyng/synthrs)
+
+Toy synthesiser library in Rust. [(sample)](https://dl.dropboxusercontent.com/u/38256631/busysignal.ogg)
 
 ## Features
 
