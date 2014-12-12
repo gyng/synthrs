@@ -1,21 +1,18 @@
-use std::num::Float;
+use std::num::{ Float, from_f64 };
+use std::mem::size_of;
+
+pub fn quantize<T>(input: f64) -> T where T: FromPrimitive {
+    let quantization_levels = 2.0.powf(size_of::<T>() as f64 * 8.0) - 1.0;
+    // Convert from [-1, 1] to take up full quantization range
+    from_f64::<T>(input * (quantization_levels / 2.0)).expect("failed to quantize to given type")
+}
+
+pub fn quantize_samples<T>(input: Vec<f64>) -> Vec<T> where T: FromPrimitive {
+    input.iter().map(|s| { quantize::<T>(*s) }).collect()
+}
 
 pub fn generate<F>(x: f64, f: F) -> f64 where F: Fn<(f64, ), f64> {
     f(x)
-}
-
-pub fn quantize_16(y: f64) -> i16 {
-    // Quantization levels for 16 bits
-    let levels = 2.0.powf(16.0) - 1.0;
-
-    // Convert from [-1, 1] to [-2**16 / 2, 2**16 / 2]
-    (y * (levels / 2.0)) as i16
-}
-
-pub fn quantize_sample_16(samples: Vec<f64>) -> Vec<i16> {
-    samples.iter().map(|s| {
-        quantize_16(*s)
-    }).collect()
 }
 
 pub fn make_sample<F>(length: f64, sample_rate: uint, waveform: F) -> Vec<f64> where F: Fn<(f64, ), f64>+Copy {

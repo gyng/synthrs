@@ -7,7 +7,7 @@ use std::rand::Rng;
 use std::num::Float;
 use std::num::FloatMath;
 
-use synthrs::synthesizer::{ make_sample, quantize_sample_16 };
+use synthrs::synthesizer::{ make_sample, quantize_samples };
 use synthrs::wave::{ SineWave, SquareWave, SawtoothWave };
 use synthrs::writer::{ write_pcm, write_wav };
 
@@ -16,27 +16,27 @@ fn main() {
     // 0. SineWave create a 440Hz sine function
     // 1. make_sample creates a Vec of samples from the SineWave function
     //    from 0.0 to 1.0 seconds at a 44100Hz sample rate
-    // 2. quantize_sample_16 quantizes the floating-point samples at 16 bits
+    // 2. quantize_samples::<i16> quantizes the floating-point samples as a signed 16-bit int
     // 3. write_pcm writes the samples to a PCM file
     write_pcm("out/sin.pcm",
-        quantize_sample_16(make_sample(1.0, 44100, SineWave(440.0)))
+        quantize_samples::<i16>(make_sample(1.0, 44100, SineWave(440.0)))
     ).ok().expect("failed");
 
     write_wav("out/sin.wav", 44100,
-        quantize_sample_16(make_sample(1.0, 44100, SineWave(440.0)))
+        quantize_samples::<i16>(make_sample(1.0, 44100, SineWave(440.0)))
     ).ok().expect("failed");
 
     write_wav("out/square.wav", 44100,
-        quantize_sample_16(make_sample(1.0, 44100, SquareWave(440.0)))
+        quantize_samples::<i16>(make_sample(1.0, 44100, SquareWave(440.0)))
     ).ok().expect("failed");
 
     write_wav("out/sawtooth.wav", 44100,
-        quantize_sample_16(make_sample(1.0, 44100, SawtoothWave(440.0)))
+        quantize_samples::<i16>(make_sample(1.0, 44100, SawtoothWave(440.0)))
     ).ok().expect("failed");
 
     // Custom function for tone generation, t is in seconds
     write_wav("out/wolftone.wav", 44100,
-        quantize_sample_16(
+        quantize_samples::<i16>(
             make_sample(1.0, 44100, |t: f64| -> f64 {
                 (SquareWave(1000.0)(t) + SquareWave(1020.0)(t)) / 2.0
             })
@@ -44,7 +44,7 @@ fn main() {
     ).ok().expect("failed");
 
     write_wav("out/whitenoise.wav", 44100,
-        quantize_sample_16(
+        quantize_samples::<i16>(
             make_sample(1.0, 44100, |_t: f64| -> f64 {
                 let mut rng = rand::task_rng();
                 (rng.gen::<f64>() - 0.5) * 2.0
@@ -53,7 +53,7 @@ fn main() {
     ).ok().expect("failed");
 
     write_wav("out/rising.wav", 44100,
-        quantize_sample_16(
+        quantize_samples::<i16>(
             make_sample(1.0, 44100, |t: f64| -> f64 {
                 let (min_f, max_f) = (1000.0, 8000.0);
                 let max_t = 1.0; // Duration of clip in seconds
@@ -65,7 +65,7 @@ fn main() {
     ).ok().expect("failed");
 
     write_wav("out/racecar.wav", 44100,
-        quantize_sample_16(
+        quantize_samples::<i16>(
             make_sample(15.0, 44100, |t: f64| -> f64 {
                 let mut rng = rand::task_rng();
                 let mut out = 0.0;
@@ -81,7 +81,7 @@ fn main() {
     ).ok().expect("failed");
 
     write_wav("out/shepard.wav", 44100,
-        quantize_sample_16(
+        quantize_samples::<i16>(
             make_sample(30.0, 44100, |t: f64| -> f64 {
                 let length = 10.0;
                 let t_mod = t % length;
