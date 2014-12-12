@@ -1,14 +1,16 @@
 # synthrs
 
-Toy synthesiser in Rust.
+Toy synthesiser library in Rust.
 
-## Usage
+## Features
 
-Edit `main.rs` to generate the sound you want then
+* Not too difficult syntax for writing your own tones (see examples)
+* Basic filters (low-pass, high-pass, band-pass, band-reject)
+* PCM or WAV output
 
-    cargo run
+## Try
 
-or to run examples
+To run examples
 
     cargo run --example EXAMPLE_NAME
 

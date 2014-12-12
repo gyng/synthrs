@@ -10,7 +10,7 @@ authors = [
 [lib]
 
 name = "synthrs"
-path = "src/main.rs"
+path = "src/lib.rs"
 
 [[example]]
 
