@@ -2,4 +2,7 @@
 
 name = "synthrs"
 version = "0.0.1"
-authors = ["Ng Guoyou <ng.guoyou@gmail.com>"]
+authors = [
+    "ng.guoyou@gmail.com",
+    "stacey.ell@gmail.com"
+]
