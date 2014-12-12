@@ -2,7 +2,7 @@
 
 extern crate synthrs;
 
-use synthrs::synthesizer::{ make_sample, quantize_samples };
+use synthrs::synthesizer::{ make_samples, quantize_samples };
 use synthrs::filter::{
     convolve, cutoff_from_frequency,
     lowpass_filter, highpass_filter, bandpass_filter, bandreject_filter
@@ -13,7 +13,7 @@ use synthrs::writer::write_wav;
 
 fn main() {
     // Lowpass/highpass filter convolution example
-    let sample = make_sample(1.0, 44100, |t: f64| -> f64 {
+    let sample = make_samples(1.0, 44100, |t: f64| -> f64 {
         0.33 * (SineWave(6000.0)(t) + SineWave(700.0)(t) + SineWave(80.0)(t))
     });
 
