@@ -2,6 +2,7 @@ use std::f64::consts::PI;
 use std::num::Float;
 use std::num::FloatMath;
 
+#[deriving(Copy)]
 struct SineWave(pub f64);
 
 impl Fn<(f64, ), f64> for SineWave {
@@ -11,6 +12,7 @@ impl Fn<(f64, ), f64> for SineWave {
     }
 }
 
+#[deriving(Copy)]
 struct SquareWave(pub f64);
 
 impl Fn<(f64, ), f64> for SquareWave {
@@ -21,6 +23,7 @@ impl Fn<(f64, ), f64> for SquareWave {
     }
 }
 
+#[deriving(Copy)]
 struct SawtoothWave(pub f64);
 
 impl Fn<(f64, ), f64> for SawtoothWave {
