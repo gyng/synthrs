@@ -8,7 +8,7 @@ use std::num::Float;
 use std::num::FloatMath;
 
 use synthrs::synthesizer::{ make_samples, quantize_samples };
-use synthrs::wave::{ SineWave, SquareWave, SawtoothWave };
+use synthrs::wave::{ SineWave, SquareWave, SawtoothWave, Bell };
 use synthrs::writer::{ write_pcm, write_wav };
 
 fn main() {
@@ -60,6 +60,14 @@ fn main() {
                 let range = max_f - min_f;
                 let f = max_f - (max_t - t) * range;
                 SineWave(f)(t)
+            })
+        )
+    ).ok().expect("failed");
+
+    write_wav("out/bell.wav", 44100,
+        quantize_samples::<i16>(
+            make_samples(10.0, 44100, |t: f64| -> f64 {
+                Bell(200.0, 0.003, 0.5)(t)
             })
         )
     ).ok().expect("failed");
