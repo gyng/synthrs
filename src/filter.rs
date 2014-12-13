@@ -17,10 +17,7 @@ pub fn lowpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
         sinc(2.0 * cutoff * (i as f64 - (n as f64 - 1.0) / 2.0))
     });
 
-    let blackman_window = Vec::from_fn(n, |i| {
-        0.42 - 0.5 * (2.0 * PI * i as f64 / (n as f64 - 1.0)).cos()
-        + 0.08 * (4.0 * PI * i as f64 / (n as f64 - 1.0)).cos()
-    });
+    let blackman_window = blackman_window(n);
 
     let filter: Vec<f64> =  sinc_wave.iter().zip(blackman_window.iter()).map(|tup| {
         *tup.val0() * *tup.val1()
@@ -34,6 +31,13 @@ pub fn lowpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
     filter.iter().map(|el| {
         *el / sum
     }).collect()
+}
+
+pub fn blackman_window(size: uint) -> Vec<f64> {
+    Vec::from_fn(size, |i| {
+        0.42 - 0.5 * (2.0 * PI * i as f64 / (size as f64 - 1.0)).cos()
+        + 0.08 * (4.0 * PI * i as f64 / (size as f64 - 1.0)).cos()
+    })
 }
 
 pub fn highpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
