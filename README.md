@@ -2,7 +2,12 @@
 
 [![Build Status](https://travis-ci.org/gyng/synthrs.svg)](https://travis-ci.org/gyng/synthrs)
 
-Toy synthesiser library in Rust. [(sample)](https://dl.dropboxusercontent.com/u/38256631/busysignal.ogg)
+Toy synthesiser library in Rust.
+
+Examples (loud)
+[[busy signal]](https://dl.dropboxusercontent.com/u/38256631/busysignal.ogg)
+[[bell]](https://dl.dropboxusercontent.com/u/38256631/bell.ogg)
+[[rustle]](https://dl.dropboxusercontent.com/u/38256631/rustle.ogg)
 
 ## Features
 
