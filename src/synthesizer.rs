@@ -83,7 +83,7 @@ pub fn make_samples_from_midi(sample_rate: uint, bpm: f64, filename: &str) -> Ve
         if tick < notes_on_for_ticks.len() {
             for note in notes_on_for_ticks[tick].iter() {
                 let frequency = music::note_midi(440.0, *note as uint);
-                out += wave::SineWave(frequency)(t)
+                out += (wave::SquareWave(frequency)(t) + wave::SquareWave(frequency)(t)) / 2.0
             }
         }
 
