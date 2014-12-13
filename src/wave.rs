@@ -3,7 +3,7 @@ use std::num::Float;
 use std::num::FloatMath;
 
 #[deriving(Copy)]
-struct SineWave(pub f64);
+pub struct SineWave(pub f64);
 
 impl Fn<(f64, ), f64> for SineWave {
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
@@ -13,7 +13,7 @@ impl Fn<(f64, ), f64> for SineWave {
 }
 
 #[deriving(Copy)]
-struct SquareWave(pub f64);
+pub struct SquareWave(pub f64);
 
 impl Fn<(f64, ), f64> for SquareWave {
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
@@ -24,7 +24,7 @@ impl Fn<(f64, ), f64> for SquareWave {
 }
 
 #[deriving(Copy)]
-struct SawtoothWave(pub f64);
+pub struct SawtoothWave(pub f64);
 
 impl Fn<(f64, ), f64> for SawtoothWave {
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {

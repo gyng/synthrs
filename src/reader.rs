@@ -18,16 +18,16 @@ use std::io::{BufferedReader, File, IoResult};
 
 #[deriving(Copy, Show)]
 pub struct MidiMessage {
-    message_type: u8, //MidiMessageType,
-    time: uint,
-    channel: u8,
-    value1: u8,
-    value2: Option<u8>
+    pub message_type: u8, //MidiMessageType,
+    pub time: uint,
+    pub channel: u8,
+    pub value1: u8,
+    pub value2: Option<u8>
 }
 
 #[deriving(Show)]
 pub struct MidiTrack {
-    messages: Vec<MidiMessage>
+    pub messages: Vec<MidiMessage>
 }
 
 impl MidiTrack {
@@ -41,9 +41,10 @@ impl MidiTrack {
 
 #[deriving(Show)]
 pub struct MidiSong {
-    time_unit: int,
-    tracks: Vec<MidiTrack>,
-    track_count: int
+    pub max_time: uint,
+    pub time_unit: uint,
+    pub tracks: Vec<MidiTrack>,
+    pub track_count: uint
 }
 
 pub fn read_midi(filename: &str) -> IoResult<MidiSong> {
@@ -55,13 +56,21 @@ pub fn read_midi(filename: &str) -> IoResult<MidiSong> {
     let _chunk_size = try!(file.read_be_u32());
     let _file_format = try!(file.read_be_u16());
     let track_count = try!(file.read_be_u16());
-    let ticks_per_quarter_note = try!(file.read_be_u16());
+    let time_division = try!(file.read_be_u16());
+
+    if time_division & 0x8000 == 0 {
+        // ticks per beat MIDI
+    } else {
+        // return Err("frames per second not supported");
+        panic!("frames per second MIDI files are not supported")
+    }
 
     let tracks: Vec<MidiTrack> = Vec::new();
     let mut song = MidiSong {
-        time_unit: ticks_per_quarter_note as int,
+        max_time: 0,
+        time_unit: time_division as uint,
         tracks: tracks,
-        track_count: track_count as int
+        track_count: track_count as uint
     };
 
     // Track chunk
@@ -70,11 +79,14 @@ pub fn read_midi(filename: &str) -> IoResult<MidiSong> {
 
     // Track data
     let mut track = MidiTrack::new();
+    let mut track_time = 0u;
 
     let mut keep_reading = true;
 
     while keep_reading {
         let delta_time = read_variable_number(&mut file).unwrap();
+        track_time += delta_time;
+        if track_time > song.max_time { song.max_time = track_time };
 
         let next_byte = try!(file.read_byte());
         let message_type = next_byte >> 4;
@@ -85,7 +97,7 @@ pub fn read_midi(filename: &str) -> IoResult<MidiSong> {
             8 | 9 | 10 | 11 | 14 => {
                 track.messages.push(MidiMessage {
                     message_type: message_type,
-                    time: delta_time,
+                    time: track_time,
                     channel: channel,
                     value1: try!(file.read_byte()),
                     value2: Some(try!(file.read_byte()))
@@ -94,7 +106,7 @@ pub fn read_midi(filename: &str) -> IoResult<MidiSong> {
             12 | 13 => {
                 track.messages.push(MidiMessage {
                     message_type: message_type,
-                    time: delta_time,
+                    time: track_time,
                     channel: channel,
                     value1: try!(file.read_byte()),
                     value2: None
@@ -106,13 +118,13 @@ pub fn read_midi(filename: &str) -> IoResult<MidiSong> {
 
                 match system_message_type {
                     0x2f => {
-                        println!("End of track");
                         song.tracks.push(track);
                         track = MidiTrack::new();
 
                         let next_track_chunk_name = file.read_be_u32();
                         if next_track_chunk_name.is_ok() {
                             let _next_track_chunk_size = try!(file.read_be_u32());
+                            track_time = 0u;
                         } else {
                             keep_reading = false;
                         }

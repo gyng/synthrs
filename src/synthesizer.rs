@@ -1,6 +1,10 @@
 use std::num::{ Float, from_f64 };
 use std::mem::size_of;
 
+use music;
+use reader;
+use wave;
+
 pub fn quantize<T>(input: f64) -> T where T: FromPrimitive {
     let quantization_levels = 2.0.powf(size_of::<T>() as f64 * 8.0) - 1.0;
     // Convert from [-1, 1] to take up full quantization range
@@ -23,6 +27,75 @@ pub fn make_samples<F>(length: f64, sample_rate: uint, waveform: F) -> Vec<f64> 
         let t = i as f64 / sample_rate as f64;
         samples.push(generate(t, waveform));
     }
+
+    samples
+}
+
+// This is really awful, is there a more elegant way to do this?
+// TODO: Split out volume normalization into a function
+pub fn make_samples_from_midi(sample_rate: uint, bpm: f64, filename: &str) -> Vec<f64> {
+    let song = reader::read_midi(filename).unwrap();
+    let length = (60.0 * song.max_time as f64) / (bpm * song.time_unit as f64);
+
+    let mut notes_on_for_ticks: Vec<Vec<u8>> = Vec::new();
+    for _ in range(0, song.max_time) {
+        let notes_on_for_tick: Vec<u8> = Vec::new();
+        notes_on_for_ticks.push(notes_on_for_tick);
+    }
+
+    for track in song.tracks.iter() {
+        for i in range(0, track.messages.len()) {
+            let event = track.messages[i];
+            if event.message_type == 9 {
+                let from_tick = event.time;
+                let note = event.value1;
+
+                let mut to_tick = song.max_time;
+                for j in range(i, track.messages.len()) {
+                    let event_to = track.messages[j];
+                    if event_to.message_type == 8 && event_to.value1 == note {
+                        to_tick = event_to.time;
+                        break;
+                    }
+                }
+
+                for tick in range(from_tick, to_tick) {
+                    notes_on_for_ticks[tick].push(note);
+                }
+            }
+        }
+    }
+
+    let midi_frequency_function = |t: f64| -> f64 {
+        let tick = (t * bpm * song.time_unit as f64 / 60.0) as uint;
+        let mut out = 0.0;
+
+        if tick < notes_on_for_ticks.len() {
+            for note in notes_on_for_ticks[tick].iter() {
+                let frequency = music::note_midi(440.0, *note as uint);
+                out += wave::SineWave(frequency)(t)
+            }
+        }
+
+        out
+    };
+
+    let num_samples = (sample_rate as f64 * length).floor() as uint;
+    let mut samples: Vec<f64> = Vec::with_capacity(num_samples);
+
+    for i in range(0u, num_samples) {
+        let t = i as f64 / sample_rate as f64;
+        samples.push(midi_frequency_function(t));
+    }
+
+    // Kill clipping
+    let peak = samples.iter().fold(0.0f64, |acc, sample| {
+        if acc > *sample { acc } else { *sample }
+    });
+
+    samples = samples.iter().map(|el| {
+        *el / peak
+    }).collect();
 
     samples
 }

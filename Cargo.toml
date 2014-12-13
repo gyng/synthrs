@@ -26,3 +26,8 @@ path = "examples/telecoms.rs"
 
 name = "filters"
 path = "examples/filters.rs"
+
+[[example]]
+
+name = "midi"
+path = "examples/midi.rs"
