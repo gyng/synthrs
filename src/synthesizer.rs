@@ -1,4 +1,4 @@
-use std::num::{ Float, from_f64 };
+use std::num::{ Float, FloatMath, from_f64 };
 use std::mem::size_of;
 
 use music;
@@ -29,6 +29,16 @@ pub fn make_samples<F>(length: f64, sample_rate: uint, waveform: F) -> Vec<f64> 
     }
 
     samples
+}
+
+pub fn normalize(samples: Vec<f64>) -> Vec<f64> {
+    let peak = samples.iter().fold(0.0f64, |acc, sample| {
+        acc.max(*sample)
+    });
+
+    samples.iter().map(|sample| {
+        *sample / peak
+    }).collect()
 }
 
 // This is really awful, is there a more elegant way to do this?
@@ -88,14 +98,5 @@ pub fn make_samples_from_midi(sample_rate: uint, bpm: f64, filename: &str) -> Ve
         samples.push(midi_frequency_function(t));
     }
 
-    // Kill clipping
-    let peak = samples.iter().fold(0.0f64, |acc, sample| {
-        if acc > *sample { acc } else { *sample }
-    });
-
-    samples = samples.iter().map(|el| {
-        *el / peak
-    }).collect();
-
-    samples
+    normalize(samples)
 }
