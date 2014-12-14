@@ -4,21 +4,41 @@ use std::io::{BufferedReader, File, IoResult};
 // http://www.ccarh.org/courses/253/handout/smf/
 // http://www.ccarh.org/courses/253-2008/files/midifiles-20080227-2up.pdf
 
-// #[repr(u8)]
-// enum MidiMessageType {
-//     NoteOff = 0x8,
-//     NoteOn = 0x9,
-//     PolyponicKeyPressure = 0xa,
-//     ControlChange = 0xb,
-//     ProgramChange = 0xc,
-//     ChannelPressure = 0xd,
-//     PitchBendChange = 0xe,
-//     System = 0xf
-// }
+#[repr(u8)]
+#[deriving(FromPrimitive, PartialEq, Copy, Show)]
+pub enum MidiEventType {
+    NoteOff = 0x8,
+    NoteOn = 0x9,
+    PolyponicKeyPressure = 0xa,
+    ControlChange = 0xb,
+    ProgramChange = 0xc,
+    ChannelPressure = 0xd,
+    PitchBendChange = 0xe,
+    System = 0xf
+}
+
+#[repr(u8)]
+#[deriving(FromPrimitive, PartialEq, Copy, Show)]
+pub enum MidiSystemEventType {
+    SequenceNumber = 0x00,
+    TextEvent = 0x01,
+    CopyrightNotice = 0x02,
+    SequenceOrTrackName = 0x03,
+    InstrumentName = 0x04,
+    LyricText = 0x05,
+    MarkerText = 0x06,
+    CuePoint = 0x07,
+    MidiChannelPrefixAssignment = 0x20,
+    EndOfTrack = 0x2f,
+    TempoSetting = 0x51,
+    SmpteOffset = 0x54,
+    TimeSignature = 0x58,
+    SequencerSpecificEvent = 0x7f
+}
 
 #[deriving(Copy, Show)]
-pub struct MidiMessage {
-    pub message_type: u8, //MidiMessageType,
+pub struct MidiEvent {
+    pub message_type: MidiEventType,
     pub time: uint,
     pub channel: u8,
     pub value1: u8,
@@ -27,12 +47,12 @@ pub struct MidiMessage {
 
 #[deriving(Show)]
 pub struct MidiTrack {
-    pub messages: Vec<MidiMessage>
+    pub messages: Vec<MidiEvent>
 }
 
 impl MidiTrack {
     fn new() -> MidiTrack {
-        let messages: Vec<MidiMessage> = Vec::new();
+        let messages: Vec<MidiEvent> = Vec::new();
         MidiTrack {
             messages: messages
         }
@@ -89,13 +109,17 @@ pub fn read_midi(filename: &str) -> IoResult<MidiSong> {
         if track_time > song.max_time { song.max_time = track_time };
 
         let next_byte = try!(file.read_byte());
-        let message_type = next_byte >> 4;
+        let message_type: MidiEventType = FromPrimitive::from_u8(next_byte >> 4).unwrap();
         let channel = next_byte & 0b00001111;
 
         // TODO: use an enum for this
         match message_type {
-            8 | 9 | 10 | 11 | 14 => {
-                track.messages.push(MidiMessage {
+            MidiEventType::NoteOff
+            | MidiEventType::NoteOn
+            | MidiEventType::PolyponicKeyPressure
+            | MidiEventType::ControlChange
+            | MidiEventType::PitchBendChange => {
+                track.messages.push(MidiEvent {
                     message_type: message_type,
                     time: track_time,
                     channel: channel,
@@ -103,8 +127,9 @@ pub fn read_midi(filename: &str) -> IoResult<MidiSong> {
                     value2: Some(try!(file.read_byte()))
                 });
             },
-            12 | 13 => {
-                track.messages.push(MidiMessage {
+            MidiEventType::ProgramChange
+            | MidiEventType::ChannelPressure => {
+                track.messages.push(MidiEvent {
                     message_type: message_type,
                     time: track_time,
                     channel: channel,
@@ -112,12 +137,12 @@ pub fn read_midi(filename: &str) -> IoResult<MidiSong> {
                     value2: None
                 });
             },
-            15 => {
-                let system_message_type = try!(file.read_byte());
+            MidiEventType::System => {
+                let system_message_type = FromPrimitive::from_u8(try!(file.read_byte()));
                 let system_data_size = try!(read_variable_number(&mut file));
 
                 match system_message_type {
-                    0x2f => {
+                    Some(MidiSystemEventType::EndOfTrack) => {
                         song.tracks.push(track);
                         track = MidiTrack::new();
 
@@ -129,15 +154,11 @@ pub fn read_midi(filename: &str) -> IoResult<MidiSong> {
                             keep_reading = false;
                         }
                     },
-                    _ => {
-                        // Discard other system messages
+                    None => {
+                        // Discard unhandled system messages
                         try!(file.read_exact(system_data_size as uint));
                     }
                 }
-            },
-            _ => {
-                panic!("message is not of a recognized MIDI message type (corrupt or unknown file format?)");
-                // return Err((), "message is not of a recognized MIDI message type (corrupt or unknown file format?)");
             }
         }
     }
@@ -172,21 +193,21 @@ fn it_parses_a_midi_file() {
     let ref messages = song.tracks[1].messages;
 
     // ProgramChange
-    assert_eq!(messages[0].message_type, 12);
+    assert_eq!(messages[0].message_type, MidiEventType::ProgramChange);
     assert_eq!(messages[0].time, 0);
     assert_eq!(messages[0].channel, 0);
     assert_eq!(messages[0].value1, 0);
     assert_eq!(messages[0].value2, None);
 
     // NoteOn
-    assert_eq!(messages[1].message_type, 9);
+    assert_eq!(messages[1].message_type, MidiEventType::NoteOn);
     assert_eq!(messages[1].time, 0);
     assert_eq!(messages[1].channel, 0);
     assert_eq!(messages[1].value1, 57);
     assert_eq!(messages[1].value2, Some(64));
 
     // NoteOff
-    assert_eq!(messages[2].message_type, 8);
+    assert_eq!(messages[2].message_type, MidiEventType::NoteOff);
     assert_eq!(messages[2].time, 960);
     assert_eq!(messages[2].channel, 0);
     assert_eq!(messages[2].value1, 57);
