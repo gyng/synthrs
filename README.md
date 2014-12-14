@@ -7,6 +7,7 @@ Toy synthesiser library in Rust.
 Examples (loud)
 [[busy signal]](https://dl.dropboxusercontent.com/u/38256631/busysignal.ogg)
 [[bell]](https://dl.dropboxusercontent.com/u/38256631/bell.ogg)
+[[mountainking]](https://dl.dropboxusercontent.com/u/38256631/mountainking.ogg)
 [[rustle]](https://dl.dropboxusercontent.com/u/38256631/rustle.ogg)
 
 ## Features

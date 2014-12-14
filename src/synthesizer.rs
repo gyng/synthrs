@@ -47,9 +47,9 @@ pub fn make_samples_from_midi(sample_rate: uint, bpm: f64, filename: &str) -> Ve
     let song = reader::read_midi(filename).unwrap();
     let length = (60.0 * song.max_time as f64) / (bpm * song.time_unit as f64);
 
-    let mut notes_on_for_ticks: Vec<Vec<u8>> = Vec::new();
+    let mut notes_on_for_ticks: Vec<Vec<(u8, u8)>> = Vec::new();
     for _ in range(0, song.max_time) {
-        let notes_on_for_tick: Vec<u8> = Vec::new();
+        let notes_on_for_tick: Vec<(u8, u8)> = Vec::new();
         notes_on_for_ticks.push(notes_on_for_tick);
     }
 
@@ -59,6 +59,7 @@ pub fn make_samples_from_midi(sample_rate: uint, bpm: f64, filename: &str) -> Ve
             if event.message_type == 9 {
                 let from_tick = event.time;
                 let note = event.value1;
+                let velocity = event.value2.unwrap();
 
                 let mut to_tick = song.max_time;
                 for j in range(i, track.messages.len()) {
@@ -70,7 +71,7 @@ pub fn make_samples_from_midi(sample_rate: uint, bpm: f64, filename: &str) -> Ve
                 }
 
                 for tick in range(from_tick, to_tick) {
-                    notes_on_for_ticks[tick].push(note);
+                    notes_on_for_ticks[tick].push((note, velocity));
                 }
             }
         }
@@ -81,9 +82,12 @@ pub fn make_samples_from_midi(sample_rate: uint, bpm: f64, filename: &str) -> Ve
         let mut out = 0.0;
 
         if tick < notes_on_for_ticks.len() {
-            for note in notes_on_for_ticks[tick].iter() {
-                let frequency = music::note_midi(440.0, *note as uint);
-                out += (wave::SquareWave(frequency)(t) + wave::SquareWave(frequency)(t)) / 2.0
+            for tup in notes_on_for_ticks[tick].iter() {
+                let note = tup.val0();
+                let velocity = tup.val1();
+                let frequency = music::note_midi(440.0, note as uint);
+                let loudness = (6.908 * (velocity as f64 / 255.0)).exp() / 1000.0;
+                out += loudness * (wave::SquareWave(frequency)(t) + wave::SquareWave(frequency)(t)) / 2.0
             }
         }
 

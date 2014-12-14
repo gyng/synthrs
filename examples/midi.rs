@@ -24,6 +24,12 @@ fn main() {
         )
     ).ok().expect("failed");
 
+    write_wav("out/mountainking.wav", 44100,
+        quantize_samples::<i16>(
+            make_samples_from_midi(44100, 117.0, "examples/assets/mountainking.mid")
+        )
+    ).ok().expect("failed");
+
     write_wav("out/rustle.wav", 44100,
         quantize_samples::<i16>(
             make_samples_from_midi(44100, 117.0, "examples/assets/rustle.mid")
