@@ -154,7 +154,7 @@ pub fn read_midi(filename: &str) -> IoResult<MidiSong> {
                             keep_reading = false;
                         }
                     },
-                    None => {
+                    _ => {
                         // Discard unhandled system messages
                         try!(file.read_exact(system_data_size as uint));
                     }
