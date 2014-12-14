@@ -57,20 +57,23 @@ pub fn make_samples_from_midi(sample_rate: uint, bpm: f64, filename: &str) -> Ve
         for i in range(0, track.messages.len()) {
             let event = track.messages[i];
             if event.message_type == 9 {
-                let from_tick = event.time;
+                let start_tick = event.time;
                 let note = event.value1;
                 let velocity = event.value2.unwrap();
 
-                let mut to_tick = song.max_time;
+                let mut end_tick = song.max_time;
                 for j in range(i, track.messages.len()) {
-                    let event_to = track.messages[j];
-                    if event_to.message_type == 8 && event_to.value1 == note {
-                        to_tick = event_to.time;
+                    let event_cursor = track.messages[j];
+
+                    // NoteOn with velocity 0 == NoteOff
+                    if (event_cursor.message_type == 8 && event_cursor.value1 == note) ||
+                       (event_cursor.message_type == 9 && event_cursor.value1 == note && event_cursor.value2.unwrap() == 0) {
+                        end_tick = event_cursor.time;
                         break;
                     }
                 }
 
-                for tick in range(from_tick, to_tick) {
+                for tick in range(start_tick, end_tick) {
                     notes_on_for_ticks[tick].push((note, velocity));
                 }
             }
@@ -87,7 +90,7 @@ pub fn make_samples_from_midi(sample_rate: uint, bpm: f64, filename: &str) -> Ve
                 let velocity = tup.val1();
                 let frequency = music::note_midi(440.0, note as uint);
                 let loudness = (6.908 * (velocity as f64 / 255.0)).exp() / 1000.0;
-                out += loudness * (wave::SquareWave(frequency)(t) + wave::SquareWave(frequency)(t)) / 2.0
+                out += loudness * wave::SquareWave(frequency)(t)
             }
         }
 
