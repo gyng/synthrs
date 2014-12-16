@@ -20,16 +20,16 @@ pub fn lowpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
     let blackman_window = blackman_window(n);
 
     let filter: Vec<f64> =  sinc_wave.iter().zip(blackman_window.iter()).map(|tup| {
-        *tup.val0() * *tup.val1()
+        *tup.0 * *tup.1
     }).collect();
 
     // Normalize
-    let sum = filter.iter().fold(0.0, |acc, el| {
-        acc + *el
+    let sum = filter.iter().fold(0.0, |acc, &el| {
+        acc + el
     });
 
-    filter.iter().map(|el| {
-        *el / sum
+    filter.iter().map(|&el| {
+        el / sum
     }).collect()
 }
 
@@ -62,10 +62,10 @@ pub fn spectral_invert(filter: Vec<f64>) -> Vec<f64> {
     assert_eq!(filter.len() % 2, 0);
     let mut count = 0;
 
-    filter.iter().map(|el| {
+    filter.iter().map(|&el| {
         let add = if count == filter.len() / 2 { 1.0 } else { 0.0 };
         count += 1;
-        -*el + add
+        -el + add
     }).collect()
 }
 
@@ -89,7 +89,7 @@ pub fn convolve(filter: Vec<f64>, input: Vec<f64>) -> Vec<f64> {
 
 pub fn add(left: Vec<f64>, right: Vec<f64>) -> Vec<f64> {
     left.iter().zip(right.iter()).map(|tup| {
-        *tup.val0() + *tup.val1()
+        *tup.0 + *tup.1
     }).collect()
 }
 

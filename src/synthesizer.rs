@@ -32,12 +32,12 @@ pub fn make_samples<F>(length: f64, sample_rate: uint, waveform: F) -> Vec<f64> 
 }
 
 pub fn normalize(samples: Vec<f64>) -> Vec<f64> {
-    let peak = samples.iter().fold(0.0f64, |acc, sample| {
-        acc.max(*sample)
+    let peak = samples.iter().fold(0.0f64, |acc, &sample| {
+        acc.max(sample)
     });
 
-    samples.iter().map(|sample| {
-        *sample / peak
+    samples.iter().map(|&sample| {
+        sample / peak
     }).collect()
 }
 
@@ -85,9 +85,7 @@ pub fn make_samples_from_midi(sample_rate: uint, bpm: f64, filename: &str) -> Ve
         let mut out = 0.0;
 
         if tick < notes_on_for_ticks.len() {
-            for tup in notes_on_for_ticks[tick].iter() {
-                let note = tup.val0();
-                let velocity = tup.val1();
+            for &(note, velocity) in notes_on_for_ticks[tick].iter() {
                 let frequency = music::note_midi(440.0, note as uint);
                 let loudness = (6.908 * (velocity as f64 / 255.0)).exp() / 1000.0;
                 out += loudness * wave::SquareWave(frequency)(t)

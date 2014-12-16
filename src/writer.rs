@@ -7,8 +7,8 @@ pub fn write_pcm(filename: &str, samples: Vec<i16>) -> IoResult<()> {
         Err(e) => panic!("File error: {}", e)
     };
 
-    for sample in samples.iter() {
-        try!(f.write_le_i16(*sample));
+    for &sample in samples.iter() {
+        try!(f.write_le_i16(sample));
     }
 
     Ok(())
