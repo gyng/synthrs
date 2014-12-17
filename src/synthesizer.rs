@@ -56,7 +56,7 @@ pub fn make_samples_from_midi(sample_rate: uint, bpm: f64, filename: &str) -> Ve
     for track in song.tracks.iter() {
         for i in range(0, track.messages.len()) {
             let event = track.messages[i];
-            if event.message_type == reader::MidiEventType::NoteOn {
+            if event.event_type == reader::MidiEventType::NoteOn {
                 let start_tick = event.time;
                 let note = event.value1;
                 let velocity = event.value2.unwrap();
@@ -66,8 +66,8 @@ pub fn make_samples_from_midi(sample_rate: uint, bpm: f64, filename: &str) -> Ve
                     let event_cursor = track.messages[j];
 
                     // NoteOn with velocity 0 == NoteOff
-                    if (event_cursor.message_type == reader::MidiEventType::NoteOff && event_cursor.value1 == note) ||
-                       (event_cursor.message_type == reader::MidiEventType::NoteOn && event_cursor.value1 == note && event_cursor.value2.unwrap() == 0) {
+                    if (event_cursor.event_type == reader::MidiEventType::NoteOff && event_cursor.value1 == note) ||
+                       (event_cursor.event_type == reader::MidiEventType::NoteOn && event_cursor.value1 == note && event_cursor.value2.unwrap() == 0) {
                         end_tick = event_cursor.time;
                         break;
                     }

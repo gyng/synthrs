@@ -1,4 +1,4 @@
-use std::io::{BufferedReader, File, IoResult};
+use std::io::{BufferedReader, File, IoResult, IoError};
 
 // http://www.midi.org/techspecs/midimessages.php
 // http://www.ccarh.org/courses/253/handout/smf/
@@ -53,173 +53,186 @@ pub enum MidiMetaEventType {
     SequencerSpecificEvent = 0x7f
 }
 
-#[deriving(Copy, Show)]
-pub struct MidiEvent {
-    pub message_type: MidiEventType,
-    pub time: uint,
-    pub channel: u8,
-    pub value1: u8,
-    pub value2: Option<u8>
+#[deriving(Show)]
+pub struct MidiSong {
+    pub max_time: uint,
+    pub time_unit: int,
+    pub tracks: Vec<MidiTrack>,
+    pub track_count: uint,
+    pub bpm: uint
 }
 
 #[deriving(Show)]
 pub struct MidiTrack {
-    pub messages: Vec<MidiEvent>
+    pub messages: Vec<MidiEvent>,
+    pub max_time: uint
 }
 
 impl MidiTrack {
     fn new() -> MidiTrack {
         let messages: Vec<MidiEvent> = Vec::new();
         MidiTrack {
-            messages: messages
+            messages: messages,
+            max_time: 0
         }
     }
 }
 
-#[deriving(Show)]
-pub struct MidiSong {
-    pub max_time: uint,
-    pub time_unit: uint,
-    pub tracks: Vec<MidiTrack>,
-    pub track_count: uint
+#[deriving(Copy, Show)]
+pub struct MidiEvent {
+    pub event_type: MidiEventType,
+    pub time: uint,
+    pub delta_time: uint,
+    pub channel: u8,
+    pub value1: u8,
+    pub value2: Option<u8>
 }
 
-pub fn read_midi(filename: &str) -> IoResult<MidiSong> {
+pub fn read_midi(filename: &str) -> Result<MidiSong, IoError> {
     let path = Path::new(filename);
-    let mut file = BufferedReader::new(File::open(&path));
+    let mut reader = BufferedReader::new(File::open(&path));
+    let mut song = try!(read_midi_header(&mut reader));
 
-    // Header
-    let _chunk_name = try!(file.read_be_u32()); // MThd
-    let _chunk_size = try!(file.read_be_u32());
-    let _file_format = try!(file.read_be_u16());
-    let track_count = try!(file.read_be_u16());
-    let time_division = try!(file.read_be_u16());
-
-    if time_division & 0x8000 == 0 {
-        // ticks per beat MIDI
-    } else {
-        // return Err("frames per second not supported");
-        panic!("frames per second MIDI files are not supported")
+    if !(song.time_unit & 0x8000 == 0) {
+        panic!("unsupported time division format (SMPTE not supported)")
     }
 
-    let tracks: Vec<MidiTrack> = Vec::new();
-    let mut song = MidiSong {
+    for _ in range(0u, song.track_count) {
+        song.tracks.push(try!(read_midi_track(&mut reader)));
+    }
+
+    song.max_time = song.tracks.iter().fold(0u, |acc, track| {
+        if track.max_time > acc { track.max_time } else { acc }
+    });
+
+    Ok(song)
+}
+
+fn read_midi_header<T>(reader: &mut T) -> IoResult<MidiSong> where T: Reader {
+    assert_eq!(try!(reader.read_be_u32()), 0x4d546864) // MThd in hexadecimal
+    assert_eq!(try!(reader.read_be_u32()), 6);         // Header length; always 6 bytes
+    let _file_format = try!(reader.read_be_u16());     // 0 = single track, 1 = multitrack, 2 = multisong
+    let track_count = try!(reader.read_be_u16());
+    let time_division = try!(reader.read_be_u16());    // If positive, units per beat. If negative, SMPTE units
+
+    Ok(MidiSong {
         max_time: 0,
-        time_unit: time_division as uint,
-        tracks: tracks,
-        track_count: track_count as uint
-    };
+        time_unit: time_division as int,
+        tracks: Vec::new(),
+        track_count: track_count as uint,
+        bpm: 120 // MIDI default BPM, can be changed by MIDI events later
+    })
+}
 
-    // Track chunk
-    let _track_chunk_name = try!(file.read_be_u32()); // MTrk
-    let _track_chunk_size = try!(file.read_be_u32());
+fn read_midi_track<T>(reader: &mut T) -> Result<MidiTrack, IoError> where T: Reader {
+    // Track chunk header
+    assert_eq!(try!(reader.read_be_u32()), 0x4d54726b); // MTrk in hexadecimal
+    let _track_chunk_size = try!(reader.read_be_u32());
 
-    // Track data
     let mut track = MidiTrack::new();
-    let mut track_time = 0u;
+    // let mut previous_status: Option<MidiEventType> = None;
 
-    let mut keep_reading = true;
-
-    while keep_reading {
-        let delta_time = read_variable_number(&mut file).unwrap();
-        track_time += delta_time;
-        if track_time > song.max_time { song.max_time = track_time };
-
-        let next_byte = try!(file.read_byte());
-        let message_type: MidiEventType = FromPrimitive::from_u8(next_byte >> 4).unwrap();
+    // Read until end of track
+    loop {
+        let delta_time = try!(read_variable_number(reader)) as uint;
+        track.max_time += delta_time;
+        let next_byte = try!(reader.read_byte());
+        let event_type: MidiEventType = FromPrimitive::from_u8(next_byte >> 4).unwrap();
+        // previous_status = Some(event_type);
         let channel = next_byte & 0b00001111;
 
-        match message_type {
+        match event_type {
             MidiEventType::NoteOff
             | MidiEventType::NoteOn
             | MidiEventType::PolyponicKeyPressure
             | MidiEventType::ControlChange
             | MidiEventType::PitchBendChange => {
                 track.messages.push(MidiEvent {
-                    message_type: message_type,
-                    time: track_time,
+                    event_type: event_type,
+                    time: track.max_time,
+                    delta_time: delta_time,
                     channel: channel,
-                    value1: try!(file.read_byte()),
-                    value2: Some(try!(file.read_byte()))
-                });
+                    value1: try!(reader.read_byte()),
+                    value2: Some(try!(reader.read_byte()))
+                })
             },
+
             MidiEventType::ProgramChange
             | MidiEventType::ChannelPressure => {
                 track.messages.push(MidiEvent {
-                    message_type: message_type,
-                    time: track_time,
+                    event_type: event_type,
+                    time: track.max_time,
+                    delta_time: delta_time,
                     channel: channel,
-                    value1: try!(file.read_byte()),
+                    value1: try!(reader.read_byte()),
                     value2: None
-                });
+                })
             },
+
             MidiEventType::System => {
-                // Handle Sysex messages
-                let system_message_type: MidiSystemEventType = FromPrimitive::from_u8(channel).unwrap();
+               // Handle Sysex messages
+               let system_message_type: MidiSystemEventType = FromPrimitive::from_u8(channel).unwrap();
 
-                match system_message_type {
-                    MidiSystemEventType::SystemExclusive => {
-                        // Variable data length: read until EndOfSystemExclusive byte
-                        let mut next_byte = try!(file.read_byte()) & 0b00001111;
-                        let mut system_message_type: Option<MidiSystemEventType> = FromPrimitive::from_u8(next_byte);
-                        while system_message_type != Some(MidiSystemEventType::EndOfSystemExclusive) {
-                            next_byte = try!(file.read_byte()) & 0b00001111;
-                            system_message_type = FromPrimitive::from_u8(next_byte);
-                        }
-                    },
+               match system_message_type {
+                   MidiSystemEventType::SystemExclusive => {
+                       let _ = read_sysex(reader); // sysex messages discarded
+                   },
 
-                    MidiSystemEventType::TuneRequest
-                    | MidiSystemEventType::TimingClock
-                    | MidiSystemEventType::TimeCodeQuaterFrame
-                    | MidiSystemEventType::Start
-                    | MidiSystemEventType::Continue
-                    | MidiSystemEventType::Stop
-                    | MidiSystemEventType::ActiveSensing => {
-                        // Unhandled, these have no data bytes
-                        try!(file.read_byte());
-                    },
+                   MidiSystemEventType::EndOfSystemExclusive => {
+                       // All EndOfSystemExclusive messages should be captured by SystemExclusive message handling
+                       panic!("unexpected EndOfSystemExclusive MIDI message: unsupported, bad, or corrupt file?")
+                   },
 
-                    MidiSystemEventType::SongPositionPointer
-                    | MidiSystemEventType::SongSelect => {
-                        // Unhandled, these have two data bytes
-                        try!(file.read_byte());
-                        try!(file.read_byte());
-                    },
+                   MidiSystemEventType::TuneRequest
+                   | MidiSystemEventType::TimingClock
+                   | MidiSystemEventType::TimeCodeQuaterFrame
+                   | MidiSystemEventType::Start
+                   | MidiSystemEventType::Continue
+                   | MidiSystemEventType::Stop
+                   | MidiSystemEventType::ActiveSensing => {
+                       // Unhandled, these have no data bytes
+                   },
 
-                    MidiSystemEventType::EndOfSystemExclusive => {
-                        // All EndOfSystemExclusive messages should be captured by SystemExclusive message handling
-                        panic!("unexpected EndOfSystemExclusive MIDI message: bad or corrupt file?")
-                    },
+                   MidiSystemEventType::SongPositionPointer
+                   | MidiSystemEventType::SongSelect => {
+                       // Unhandled, these have two data bytes
+                       try!(reader.read_exact(2));
+                   },
 
-                    MidiSystemEventType::SystemResetOrMeta => {
-                        // Typically these are meta messages
-                        let meta_message_type: Option<MidiMetaEventType> = FromPrimitive::from_u8(try!(file.read_byte()));
-                        let meta_data_size = try!(read_variable_number(&mut file));
+                   MidiSystemEventType::SystemResetOrMeta => {
+                       // Typically these are meta messages
+                       let meta_message_type: Option<MidiMetaEventType> = FromPrimitive::from_u8(try!(reader.read_byte()));
+                       let meta_data_size = try!(read_variable_number(reader));
 
-                        match meta_message_type {
+                       match meta_message_type {
                             Some(MidiMetaEventType::EndOfTrack) => {
-                                song.tracks.push(track);
-                                track = MidiTrack::new();
-                                let next_track_chunk_name = file.read_be_u32();
-                                if next_track_chunk_name.is_ok() {
-                                    let _next_track_chunk_size = try!(file.read_be_u32());
-                                    track_time = 0u;
-                                } else {
-                                    keep_reading = false;
-                                }
+                                break
                             },
                             _ => {
-                                // Discard unhandled meta messages
-                                try!(file.read_exact(meta_data_size as uint));
+                                 // Discard unhandled meta messages
+                                try!(reader.read_exact(meta_data_size as uint));
                             }
-                        }
-                    }
-                }
+                       }
+                   }
+               }
             }
         }
     }
 
-    Ok(song)
+    Ok(track)
+}
+
+fn read_sysex<T>(reader: &mut T) -> Result<(), IoError> where T: Reader {
+    // Discard all sysex messages
+    // Variable data length: read until EndOfSystemExclusive byte
+    let mut next_byte = try!(reader.read_byte()) & 0b00001111;
+    let mut system_message_type: Option<MidiSystemEventType> = FromPrimitive::from_u8(next_byte);
+    while system_message_type != Some(MidiSystemEventType::EndOfSystemExclusive) {
+        next_byte = try!(reader.read_byte()) & 0b00001111;
+        system_message_type = FromPrimitive::from_u8(next_byte);
+    }
+
+    Ok(())
 }
 
 fn read_variable_number<T>(reader: &mut T) -> IoResult<uint> where T: Reader {
@@ -249,21 +262,21 @@ fn it_parses_a_midi_file() {
     let ref messages = song.tracks[1].messages;
 
     // ProgramChange
-    assert_eq!(messages[0].message_type, MidiEventType::ProgramChange);
+    assert_eq!(messages[0].event_type, MidiEventType::ProgramChange);
     assert_eq!(messages[0].time, 0);
     assert_eq!(messages[0].channel, 0);
     assert_eq!(messages[0].value1, 0);
     assert_eq!(messages[0].value2, None);
 
     // NoteOn
-    assert_eq!(messages[1].message_type, MidiEventType::NoteOn);
+    assert_eq!(messages[1].event_type, MidiEventType::NoteOn);
     assert_eq!(messages[1].time, 0);
     assert_eq!(messages[1].channel, 0);
     assert_eq!(messages[1].value1, 57);
     assert_eq!(messages[1].value2, Some(64));
 
     // NoteOff
-    assert_eq!(messages[2].message_type, MidiEventType::NoteOff);
+    assert_eq!(messages[2].event_type, MidiEventType::NoteOff);
     assert_eq!(messages[2].time, 960);
     assert_eq!(messages[2].channel, 0);
     assert_eq!(messages[2].value1, 57);
