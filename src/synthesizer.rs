@@ -43,9 +43,9 @@ pub fn normalize(samples: Vec<f64>) -> Vec<f64> {
 
 // This is really awful, is there a more elegant way to do this?
 // TODO: Split out volume normalization into a function
-pub fn make_samples_from_midi(sample_rate: uint, bpm: f64, filename: &str) -> Vec<f64> {
+pub fn make_samples_from_midi(sample_rate: uint, filename: &str) -> Vec<f64> {
     let song = reader::read_midi(filename).unwrap();
-    let length = (60.0 * song.max_time as f64) / (bpm * song.time_unit as f64);
+    let length = (60.0 * song.max_time as f64) / (song.bpm * song.time_unit as f64);
 
     let mut notes_on_for_ticks: Vec<Vec<(u8, u8)>> = Vec::new();
     for _ in range(0, song.max_time) {
@@ -74,14 +74,14 @@ pub fn make_samples_from_midi(sample_rate: uint, bpm: f64, filename: &str) -> Ve
                 }
 
                 for tick in range(start_tick, end_tick) {
-                    notes_on_for_ticks[tick].push((note, velocity));
+                    notes_on_for_ticks[tick].push((note as u8, velocity as u8));
                 }
             }
         }
     }
 
     let midi_frequency_function = |t: f64| -> f64 {
-        let tick = (t * bpm * song.time_unit as f64 / 60.0) as uint;
+        let tick = (t * song.bpm * song.time_unit as f64 / 60.0) as uint;
         let mut out = 0.0;
 
         if tick < notes_on_for_ticks.len() {
