@@ -3,6 +3,7 @@ use std::io::{BufferedReader, File, IoResult, IoError};
 // http://www.midi.org/techspecs/midimessages.php
 // http://www.ccarh.org/courses/253/handout/smf/
 // http://www.ccarh.org/courses/253-2008/files/midifiles-20080227-2up.pdf
+// http://dogsbodynet.com/fileformats/midi.html#RUNSTATUS
 
 #[repr(u8)]
 #[deriving(FromPrimitive, PartialEq, Copy, Show)]
@@ -91,7 +92,8 @@ pub struct MidiEvent {
 struct MidiEventIterator<'a, T> where T: Reader+'a {
     reader: &'a mut T,
     time: uint,
-    running_status: Option<MidiEventType>
+    running_status: Option<MidiEventType>,
+    running_channel: Option<u8>
 }
 
 impl<'a, T> MidiEventIterator<'a, T> where T: Reader+'a {
@@ -99,7 +101,8 @@ impl<'a, T> MidiEventIterator<'a, T> where T: Reader+'a {
         MidiEventIterator {
             reader: reader,
             time: 0,
-            running_status: None
+            running_status: None,
+            running_channel: None
         }
     }
 }
@@ -116,23 +119,28 @@ impl<'a, T> Iterator<Result<MidiEvent, IoError>> for MidiEventIterator<'a, T> wh
             let delta_time = try_some!(read_variable_number(self.reader));
             self.time += delta_time;
 
+            let mut is_running = true;
             let next_byte = try_some!(self.reader.read_byte());
-            let event_type: MidiEventType = FromPrimitive::from_u8(next_byte >> 4).unwrap();
-            self.running_status = Some(event_type);
-            let channel = next_byte & 0b00001111;
 
-            match event_type {
+            if next_byte >= 0x80 {
+                let event_type: MidiEventType = FromPrimitive::from_u8(next_byte >> 4).unwrap();
+                self.running_status = Some(event_type);
+                self.running_channel = Some(next_byte & 0b00001111);
+                is_running = false;
+            }
+
+            match self.running_status.unwrap() {
                 MidiEventType::NoteOff
                 | MidiEventType::NoteOn
                 | MidiEventType::PolyponicKeyPressure
                 | MidiEventType::ControlChange
                 | MidiEventType::PitchBendChange => {
                     return Some(Ok(MidiEvent {
-                        event_type: event_type,
+                        event_type: self.running_status.unwrap(),
                         time: self.time,
                         delta_time: delta_time,
-                        channel: channel,
-                        value1: try_some!(self.reader.read_byte()),
+                        channel: self.running_channel.unwrap(),
+                        value1: if is_running { next_byte } else { try_some!(self.reader.read_byte()) },
                         value2: Some(try_some!(self.reader.read_byte()))
                     }))
                 },
@@ -140,18 +148,18 @@ impl<'a, T> Iterator<Result<MidiEvent, IoError>> for MidiEventIterator<'a, T> wh
                 MidiEventType::ProgramChange
                 | MidiEventType::ChannelPressure => {
                     return Some(Ok(MidiEvent {
-                        event_type: event_type,
+                        event_type: self.running_status.unwrap(),
                         time: self.time,
                         delta_time: delta_time,
-                        channel: channel,
-                        value1: try_some!(self.reader.read_byte()),
+                        channel: self.running_channel.unwrap(),
+                        value1: if is_running { next_byte } else { try_some!(self.reader.read_byte()) },
                         value2: None
                     }))
                 },
 
                 MidiEventType::System => {
                     // Handle Sysex messages
-                    let system_message_type: MidiSystemEventType = FromPrimitive::from_u8(channel).unwrap();
+                    let system_message_type: MidiSystemEventType = FromPrimitive::from_u8(self.running_channel.unwrap()).unwrap();
 
                     match system_message_type {
                         MidiSystemEventType::SystemExclusive => {
@@ -324,7 +332,14 @@ fn it_parses_a_midi_file() {
 }
 
 #[test]
-fn it_parses_a_multitrack_midi_file() {
+fn it_parses_a_midi_file_with_multiple_tracks() {
     let song = read_midi("tests/assets/multitrack.mid").unwrap();
-    assert_eq!(song.tracks.len(), 3); // metadata track included
+    assert_eq!(song.tracks.len(), 3);
+}
+
+#[test]
+fn it_parses_a_midi_file_with_running_status() {
+    let song = read_midi("tests/assets/running_status.mid").unwrap();
+    assert_eq!(song.tracks.len(), 1);
+    assert_eq!(song.max_time, 5640);
 }
