@@ -1,3 +1,4 @@
+use std::cmp::max;
 use std::io::{BufferedReader, File, IoResult, IoError};
 
 // http://www.midi.org/techspecs/midimessages.php
@@ -65,15 +66,15 @@ pub struct MidiSong {
 
 #[deriving(Show)]
 pub struct MidiTrack {
-    pub messages: Vec<MidiEvent>,
+    pub events: Vec<MidiEvent>,
     pub max_time: uint
 }
 
 impl MidiTrack {
     fn new() -> MidiTrack {
-        let messages: Vec<MidiEvent> = Vec::new();
+        let events: Vec<MidiEvent> = Vec::new();
         MidiTrack {
-            messages: messages,
+            events: events,
             max_time: 0
         }
     }
@@ -248,13 +249,13 @@ pub fn read_midi(filename: &str) -> Result<MidiSong, IoError> {
     }
 
     song.max_time = song.tracks.iter().fold(0u, |acc, track| {
-        if track.max_time > acc { track.max_time } else { acc }
+        max(acc, track.max_time)
     });
 
     // Guess song tempo (only take the first tempo change event)
     // This means tempo changes in-song are not supported
     for track in song.tracks.iter() {
-        for event in track.messages.iter() {
+        for event in track.events.iter() {
             match event.meta_event_type {
                 Some(MidiMetaEventType::TempoSetting) => {
                     song.bpm = (60000000.0 / event.value1 as f64) as f64;
@@ -288,20 +289,16 @@ fn read_midi_track<T>(reader: &mut T) -> Result<MidiTrack, IoError> where T: Rea
     // Track chunk header
     assert_eq!(try!(reader.read_be_u32()), 0x4d54726b); // MTrk in hexadecimal
     let _track_chunk_size = try!(reader.read_be_u32());
-
     let mut track = MidiTrack::new();
-    // let mut previous_status: Option<MidiEventType> = None;
 
     // Read until end of track
-    let mut event_iterator = MidiEventIterator::new(reader);
+    let event_iterator = MidiEventIterator::new(reader);
+    track.events = event_iterator.map(|event| {
+        event.unwrap()
+    }).collect::<Vec<_>>();
 
-    // track.messages = event_iterator.collect();
-    for event in event_iterator {
-        track.messages.push(event.unwrap());
-    }
-
-    track.max_time = if track.messages.len() > 1 {
-        track.messages[track.messages.len() - 1u].time
+    track.max_time = if track.events.len() > 1 {
+        track.events[track.events.len() - 1u].time
     } else {
         0
     };
@@ -346,7 +343,7 @@ fn it_parses_a_midi_file() {
     let song = read_midi("tests/assets/test.mid").ok().expect("Failed");
 
     assert_eq!(song.tracks.len(), 2); // metadata track included
-    let ref messages = song.tracks[1].messages;
+    let ref messages = song.tracks[1].events;
 
     // ProgramChange
     assert_eq!(messages[0].event_type, MidiEventType::ProgramChange);

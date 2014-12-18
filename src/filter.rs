@@ -69,7 +69,6 @@ pub fn spectral_invert(filter: Vec<f64>) -> Vec<f64> {
     }).collect()
 }
 
-// Output will be longer than input as we add to border
 pub fn convolve(filter: Vec<f64>, input: Vec<f64>) -> Vec<f64> {
     let mut output: Vec<f64> = Vec::new();
     let h_len = (filter.len() / 2) as int;
@@ -79,7 +78,7 @@ pub fn convolve(filter: Vec<f64>, input: Vec<f64>) -> Vec<f64> {
         for j in range(0i, filter.len() as int) {
             let input_idx = i + j;
             let output_idx = i + h_len;
-            if input_idx < 0 || input_idx >= input.len() as int { continue; }
+            if input_idx < 0 || input_idx >= input.len() as int { continue }
             output[output_idx as uint] += input[input_idx as uint] * filter[j as uint]
         }
     }

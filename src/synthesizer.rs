@@ -31,7 +31,7 @@ pub fn make_samples<F>(length: f64, sample_rate: uint, waveform: F) -> Vec<f64> 
     samples
 }
 
-pub fn normalize(samples: Vec<f64>) -> Vec<f64> {
+pub fn peak_normalize(samples: Vec<f64>) -> Vec<f64> {
     let peak = samples.iter().fold(0.0f64, |acc, &sample| {
         acc.max(sample)
     });
@@ -42,7 +42,6 @@ pub fn normalize(samples: Vec<f64>) -> Vec<f64> {
 }
 
 // This is really awful, is there a more elegant way to do this?
-// TODO: Split out volume normalization into a function
 pub fn make_samples_from_midi(sample_rate: uint, filename: &str) -> Vec<f64> {
     let song = reader::read_midi(filename).unwrap();
     let length = (60.0 * song.max_time as f64) / (song.bpm * song.time_unit as f64);
@@ -54,16 +53,16 @@ pub fn make_samples_from_midi(sample_rate: uint, filename: &str) -> Vec<f64> {
     }
 
     for track in song.tracks.iter() {
-        for i in range(0, track.messages.len()) {
-            let event = track.messages[i];
+        for i in range(0, track.events.len()) {
+            let event = track.events[i];
             if event.event_type == reader::MidiEventType::NoteOn {
                 let start_tick = event.time;
                 let note = event.value1;
                 let velocity = event.value2.unwrap();
 
                 let mut end_tick = song.max_time;
-                for j in range(i, track.messages.len()) {
-                    let event_cursor = track.messages[j];
+                for j in range(i, track.events.len()) {
+                    let event_cursor = track.events[j];
 
                     // NoteOn with velocity 0 == NoteOff
                     if (event_cursor.event_type == reader::MidiEventType::NoteOff && event_cursor.value1 == note) ||
@@ -103,5 +102,5 @@ pub fn make_samples_from_midi(sample_rate: uint, filename: &str) -> Vec<f64> {
         samples.push(midi_frequency_function(t));
     }
 
-    normalize(samples)
+    peak_normalize(samples)
 }
