@@ -96,7 +96,7 @@ pub struct MidiEvent {
 // try! cannot be used inside a function which returns Option<Result<T, IoError>>
 macro_rules! try_some(
     ($e:expr) => (match $e { Ok(e) => e, Err(e) => return Some(Err(e)) })
-)
+);
 
 // # limbo_byte
 // We can only tell if the next event is a running status event by reading the status byte and checking if it's a valid byte
@@ -315,11 +315,11 @@ pub fn read_midi(filename: &str) -> Result<MidiSong, IoError> {
 }
 
 fn read_midi_header<T>(reader: &mut T) -> IoResult<MidiSong> where T: Reader {
-    assert_eq!(try!(reader.read_be_u32()), 0x4d546864) // MThd in hexadecimal
-    assert_eq!(try!(reader.read_be_u32()), 6);         // Header length; always 6 bytes
-    let _file_format = try!(reader.read_be_u16());     // 0 = single track, 1 = multitrack, 2 = multisong
+    assert_eq!(try!(reader.read_be_u32()), 0x4d546864); // MThd in hexadecimal
+    assert_eq!(try!(reader.read_be_u32()), 6);          // Header length; always 6 bytes
+    let _file_format = try!(reader.read_be_u16());      // 0 = single track, 1 = multitrack, 2 = multisong
     let track_count = try!(reader.read_be_u16());
-    let time_division = try!(reader.read_be_u16());    // If positive, units per beat. If negative, SMPTE units
+    let time_division = try!(reader.read_be_u16());     // If positive, units per beat. If negative, SMPTE units
 
     Ok(MidiSong {
         max_time: 0,

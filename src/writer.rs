@@ -30,7 +30,7 @@ pub fn write_wav(filename: &str, sample_rate: uint, samples: Vec<i16>) -> IoResu
     let byte_rate = (sample_rate * channels * bit_depth / 8) as i32;
     let block_align = (channels * bit_depth / 8) as i16;
 
-    try!(f.write_be_i32(0x52494646))              // ChunkID, RIFF
+    try!(f.write_be_i32(0x52494646));             // ChunkID, RIFF
     try!(f.write_le_i32(chunk_size));             // ChunkSize
     try!(f.write_be_i32(0x57415645));             // Format, WAVE
 
