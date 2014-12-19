@@ -92,11 +92,28 @@ pub struct MidiEvent {
     pub value2: Option<uint>
 }
 
+// Similar to try! but this wraps the IoError return in an Option instead
+// try! cannot be used inside a function which returns Option<Result<T, IoError>>
+macro_rules! try_some(
+    ($e:expr) => (match $e { Ok(e) => e, Err(e) => return Some(Err(e)) })
+)
+
+// # limbo_byte
+// We can only tell if the next event is a running status event by reading the status byte and checking if it's a valid byte
+// If it's not a valid status byte (value < 0x80) it's instead the data byte of the next event (with the same status as
+// the previous event). Since I can't figure out how to rewind, there are now two control paths:
+//     A: read n-1 bytes for data (eg. for a 2-data event data bytes = [byte read to check for running event][read a byte])
+//     B: read n bytes for data (data bytes = [read a byte][read a byte])
+// I don't want to pass the "limbo_byte" around functions, so I kept it in the Iterator.
 struct MidiEventIterator<'a, T> where T: Reader+'a {
     reader: &'a mut T,
     time: uint,
+    delta_time: uint,
     running_status: Option<MidiEventType>,
-    running_channel: Option<u8>
+    running_channel: Option<u8>,
+    limbo_byte: u8,
+    is_running: bool,
+    end_of_track: bool
 }
 
 impl<'a, T> MidiEventIterator<'a, T> where T: Reader+'a {
@@ -104,33 +121,137 @@ impl<'a, T> MidiEventIterator<'a, T> where T: Reader+'a {
         MidiEventIterator {
             reader: reader,
             time: 0,
+            delta_time: 0,
             running_status: None,
-            running_channel: None
+            running_channel: None,
+            limbo_byte: 0,
+            is_running: false,
+            end_of_track: false
         }
+    }
+
+    fn read_single_data_event(&mut self) -> Result<MidiEvent, IoError> {
+        Ok(MidiEvent {
+            event_type: self.running_status.unwrap(),
+            system_event_type: None,
+            meta_event_type: None,
+            time: self.time,
+            delta_time: self.delta_time,
+            channel: self.running_channel.unwrap(),
+            value1: (if self.is_running { self.limbo_byte } else { try!(self.reader.read_byte()) }) as uint,
+            value2: None
+        })
+    }
+
+    fn read_double_data_event(&mut self) -> Result<MidiEvent, IoError> {
+        Ok(MidiEvent {
+            event_type: self.running_status.unwrap(),
+            system_event_type: None,
+            meta_event_type: None,
+            time: self.time,
+            delta_time: self.delta_time,
+            channel: self.running_channel.unwrap(),
+            value1: (if self.is_running { self.limbo_byte } else { try!(self.reader.read_byte()) }) as uint,
+            value2: Some(try!(self.reader.read_byte()) as uint)
+        })
+    }
+
+    /// Returns None if no system messages were handled
+    fn read_system_event(&mut self) -> Option<Result<MidiEvent, IoError>> {
+        let system_event_type: MidiSystemEventType = FromPrimitive::from_u8(self.running_channel.unwrap()).unwrap();
+
+        match system_event_type {
+            MidiSystemEventType::SystemExclusive => {
+                let _ = read_sysex(self.reader); // sysex messages discarded
+            },
+
+            MidiSystemEventType::EndOfSystemExclusive => {
+                // All EndOfSystemExclusive messages should be captured by SystemExclusive message handling
+                panic!("unexpected EndOfSystemExclusive MIDI message: unsupported, bad, or corrupt file?")
+            },
+
+            MidiSystemEventType::TuneRequest
+            | MidiSystemEventType::TimingClock
+            | MidiSystemEventType::TimeCodeQuaterFrame
+            | MidiSystemEventType::Start
+            | MidiSystemEventType::Continue
+            | MidiSystemEventType::Stop
+            | MidiSystemEventType::ActiveSensing => {
+                // Unhandled, these have no data bytes
+            },
+
+            MidiSystemEventType::SongPositionPointer
+            | MidiSystemEventType::SongSelect => {
+                // Unhandled, these have two data bytes
+                try_some!(self.reader.read_exact(2));
+            },
+
+            MidiSystemEventType::SystemResetOrMeta => {
+                // These are meta messages
+                if let Some(meta_event) = self.read_meta_event(system_event_type) {
+                    return Some(meta_event)
+                }
+            }
+        }
+
+        None
+    }
+
+    /// Returns None if no system messages were handled
+    fn read_meta_event(&mut self, system_event_type: MidiSystemEventType) -> Option<Result<MidiEvent, IoError>> {
+        let meta_message_type: Option<MidiMetaEventType> = FromPrimitive::from_u8(try_some!(self.reader.read_byte()));
+        let meta_data_size = try_some!(read_variable_number(self.reader));
+
+        match meta_message_type {
+            Some(MidiMetaEventType::EndOfTrack) => {
+                self.end_of_track = true;
+            },
+
+            Some(MidiMetaEventType::TempoSetting) => {
+                assert_eq!(meta_data_size, 3u);
+                let tempo_byte1 = if self.is_running { self.limbo_byte } else { try_some!(self.reader.read_byte()) };
+                let tempo_byte2 = try_some!(self.reader.read_byte());
+                let tempo_byte3 = try_some!(self.reader.read_byte());
+                let tempo = (tempo_byte1 as uint << 16) as uint + (tempo_byte2 as uint << 8) as uint + tempo_byte3 as uint;
+
+                return Some(Ok(MidiEvent {
+                    event_type: self.running_status.unwrap(),
+                    system_event_type: Some(system_event_type),
+                    meta_event_type: meta_message_type,
+                    time: self.time,
+                    delta_time: self.delta_time,
+                    channel: self.running_channel.unwrap(),
+                    value1: tempo,
+                    value2: None
+                }))
+            },
+
+            _ => {
+                // Discard unhandled meta messages
+                try_some!(self.reader.read_exact(meta_data_size as uint));
+            }
+        }
+
+        None
     }
 }
 
-// Similar to try! but this wraps the IoError return in an Option instead
-macro_rules! try_some(
-    ($e:expr) => (match $e { Ok(e) => e, Err(e) => return Some(Err(e)) })
-)
-
-// Drops unhandled messages
-// TODO: Clean this mess up - all the mess is contained in here
+/// Unhandled messages are dropped (typically, obscure system messages)
 impl<'a, T> Iterator<Result<MidiEvent, IoError>> for MidiEventIterator<'a, T> where T: Reader+'a {
     fn next(&mut self) -> Option<Result<MidiEvent, IoError>> {
-        loop {
+        while !self.end_of_track {
             let delta_time = try_some!(read_variable_number(self.reader));
             self.time += delta_time;
 
-            let mut is_running = true;
-            let next_byte = try_some!(self.reader.read_byte());
+            self.limbo_byte = try_some!(self.reader.read_byte());
 
-            if next_byte >= 0x80 {
-                let event_type: MidiEventType = FromPrimitive::from_u8(next_byte >> 4).unwrap();
+            if self.limbo_byte >= 0x80 {
+                let event_type: MidiEventType = FromPrimitive::from_u8(self.limbo_byte >> 4).unwrap();
                 self.running_status = Some(event_type);
-                self.running_channel = Some(next_byte & 0b00001111);
-                is_running = false;
+                self.running_channel = Some(self.limbo_byte & 0b00001111);
+                self.is_running = false;
+            } else {
+                self.is_running = true;
             }
 
             match self.running_status.unwrap() {
@@ -139,99 +260,23 @@ impl<'a, T> Iterator<Result<MidiEvent, IoError>> for MidiEventIterator<'a, T> wh
                 | MidiEventType::PolyponicKeyPressure
                 | MidiEventType::ControlChange
                 | MidiEventType::PitchBendChange => {
-                    return Some(Ok(MidiEvent {
-                        event_type: self.running_status.unwrap(),
-                        system_event_type: None,
-                        meta_event_type: None,
-                        time: self.time,
-                        delta_time: delta_time,
-                        channel: self.running_channel.unwrap(),
-                        value1: (if is_running { next_byte } else { try_some!(self.reader.read_byte()) }) as uint,
-                        value2: Some(try_some!(self.reader.read_byte()) as uint)
-                    }))
+                    return Some(self.read_double_data_event())
                 },
 
                 MidiEventType::ProgramChange
                 | MidiEventType::ChannelPressure => {
-                    return Some(Ok(MidiEvent {
-                        event_type: self.running_status.unwrap(),
-                        system_event_type: None,
-                        meta_event_type: None,
-                        time: self.time,
-                        delta_time: delta_time,
-                        channel: self.running_channel.unwrap(),
-                        value1: (if is_running { next_byte } else { try_some!(self.reader.read_byte()) }) as uint,
-                        value2: None
-                    }))
+                    return Some(self.read_single_data_event())
                 },
 
                 MidiEventType::System => {
-                    // Handle Sysex messages
-                    let system_event_type: MidiSystemEventType = FromPrimitive::from_u8(self.running_channel.unwrap()).unwrap();
-
-                    match system_event_type {
-                        MidiSystemEventType::SystemExclusive => {
-                            let _ = read_sysex(self.reader); // sysex messages discarded
-                        },
-
-                        MidiSystemEventType::EndOfSystemExclusive => {
-                            // All EndOfSystemExclusive messages should be captured by SystemExclusive message handling
-                            panic!("unexpected EndOfSystemExclusive MIDI message: unsupported, bad, or corrupt file?")
-                        },
-
-                        MidiSystemEventType::TuneRequest
-                        | MidiSystemEventType::TimingClock
-                        | MidiSystemEventType::TimeCodeQuaterFrame
-                        | MidiSystemEventType::Start
-                        | MidiSystemEventType::Continue
-                        | MidiSystemEventType::Stop
-                        | MidiSystemEventType::ActiveSensing => {
-                            // Unhandled, these have no data bytes
-                        },
-
-                        MidiSystemEventType::SongPositionPointer
-                        | MidiSystemEventType::SongSelect => {
-                            // Unhandled, these have two data bytes
-                            try_some!(self.reader.read_exact(2));
-                        },
-
-                        MidiSystemEventType::SystemResetOrMeta => {
-                            // Typically these are meta messages
-                            let meta_message_type: Option<MidiMetaEventType> = FromPrimitive::from_u8(try_some!(self.reader.read_byte()));
-                            let meta_data_size = try_some!(read_variable_number(self.reader));
-
-                            match meta_message_type {
-                                Some(MidiMetaEventType::EndOfTrack) => {
-                                    return None
-                                },
-                                Some(MidiMetaEventType::TempoSetting) => {
-                                    assert_eq!(meta_data_size, 3u);
-                                    let tempo_byte1 = if is_running { next_byte } else { try_some!(self.reader.read_byte()) };
-                                    let tempo_byte2 = try_some!(self.reader.read_byte());
-                                    let tempo_byte3 = try_some!(self.reader.read_byte());
-                                    let tempo = (tempo_byte1 as uint << 16) as uint + (tempo_byte2 as uint << 8) as uint + tempo_byte3 as uint;
-
-                                    return Some(Ok(MidiEvent {
-                                        event_type: self.running_status.unwrap(),
-                                        system_event_type: Some(system_event_type),
-                                        meta_event_type: meta_message_type,
-                                        time: self.time,
-                                        delta_time: delta_time,
-                                        channel: self.running_channel.unwrap(),
-                                        value1: tempo,
-                                        value2: None
-                                    }))
-                                },
-                                _ => {
-                                    // Discard unhandled meta messages
-                                    try_some!(self.reader.read_exact(meta_data_size as uint));
-                                }
-                            }
-                        }
+                    if let Some(system_event) = self.read_system_event() {
+                        return Some(system_event)
                     }
                 }
             }
         }
+
+        None
     }
 }
 
