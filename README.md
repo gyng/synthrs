@@ -23,6 +23,15 @@ To run examples
 
     cargo run --example EXAMPLE_NAME
 
+To use as a library, add this to `Cargo.toml`
+
+    [dependencies.synthrs]
+    git = "https://github.com/gyng/synthrs"
+
+and then
+
+    extern crate synthrs;
+
 ### Examples
 
 Check out `Cargo.toml` for the full example list.
