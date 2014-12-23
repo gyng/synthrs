@@ -1,10 +1,22 @@
+//! A collection of signal filters. To filter a bunch of samples, first create the
+//! filter and samples. Following that, run `convolve(filter, input)`.
+//!
+//! See: `examples/filters.rs`
+//!
+//! Common filter arguments:
+//!
+//! * `cutoff`: as a fraction of sample rate, can be obtained from
+//!             `cutoff_from_frequency(cutoff, sample_rate)`. (eg. for a lowpass filter
+//!             frequencies below sample_rate / cutoff are preserved)
+//! * `band`: transition band as a fraction of the sample rate. This determines how
+//!         the cutoff "blends", or how harsh a cutoff this is.
+
 use std::f64::consts::PI;
 use std::num::Float;
 use std::num::FloatMath;
 
-
-/// Cutoff: fraction of sample rate (eg. frequencies below sample_rate / cutoff are preserved)
-/// Transition band: fraction of sample rate (how harsh a cutoff this is)
+/// Creates a low-pass filter. Frequencies below the cutoff are preserved when
+/// samples are convolved with this filter.
 pub fn lowpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
     let mut n = (4.0 / band).ceil() as uint;
     if n % 2 == 1 { n += 1; }
@@ -40,10 +52,14 @@ pub fn blackman_window(size: uint) -> Vec<f64> {
     })
 }
 
+/// Creates a high-pass filter. Frequencies above the cutoff are preserved when
+/// samples are convolved with this filter.
 pub fn highpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
     spectral_invert(lowpass_filter(cutoff, band))
 }
 
+/// Creates a low-pass filter. Frequencies between `low_frequency` and `high_frequency`
+/// are preserved when samples are convolved with this filter.
 pub fn bandpass_filter(low_frequency: f64, high_frequency: f64, band: f64) -> Vec<f64> {
     assert!(low_frequency <= high_frequency);
     let lowpass = lowpass_filter(high_frequency, band);
@@ -51,6 +67,8 @@ pub fn bandpass_filter(low_frequency: f64, high_frequency: f64, band: f64) -> Ve
     convolve(highpass, lowpass)
 }
 
+/// Creates a low-pass filter. Frequencies outside of `low_frequency` and `high_frequency`
+/// are preserved when samples are convolved with this filter.
 pub fn bandreject_filter(low_frequency: f64, high_frequency: f64, band: f64) -> Vec<f64> {
     assert!(low_frequency <= high_frequency);
     let lowpass = lowpass_filter(low_frequency, band);
@@ -92,6 +110,8 @@ pub fn add(left: Vec<f64>, right: Vec<f64>) -> Vec<f64> {
     }).collect()
 }
 
+/// Returns the cutoff fraction for a given cutoff frequency at a sample rate, which can be
+/// used for filter creation.
 pub fn cutoff_from_frequency(frequency: f64, sample_rate: uint) -> f64 {
     frequency / sample_rate as f64
 }

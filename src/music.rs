@@ -3,13 +3,31 @@ use std::num::Float;
 #[cfg(test)]
 use std::num::FloatMath;
 
-/// Equal-tempered
-/// 0=C 1=C# 2=D 3=D# 4=E 5=F 6=F# 7=G 8=G# 9=A 10=B
+/// Calculates the frequency (equal-tempered) given A4, the semitone and the octave.
+/// C4 = `note(440.0, 0u, 4u)`
+///
+/// ### Semitone table
+///
+/// ```
+///  0 C
+///  1 C#
+///  2 D
+///  3 D#
+///  4 E
+///  5 F
+///  6 F#
+///  7 G
+///  8 G#
+///  9 A
+/// 10 B
+/// ```
 pub fn note(a4: f64, semitone: uint, octave: uint) -> f64 {
     let semitones_from_a4 = octave as int * 12 + semitone as int - 9 - 48;
     a4 * (semitones_from_a4 as f64 * 2.0.ln() / 12.0).exp()
 }
 
+/// Calculates the frequency (equal-tempered) given A4 and the MIDI note value.
+/// C4 = `note_midi(440.0, 72u)`
 pub fn note_midi(a4: f64, midi_note: uint) -> f64 {
     let semitone = (midi_note - 24) % 12;
     let octave = ((midi_note - 24) / 12) + 1;

@@ -1,3 +1,14 @@
+//! The following code generates a 1s long, 16-bit, 440Hz sinewave at a 44100Hz sample rate.
+//! It then writes the generated samples into a 44100Hz WAV file at `out/sine.wav`.
+//!
+//! ```
+//! write_wav("out/sine.wav", 44100,
+//!     quantize_samples::<i16>(make_samples(1.0, 44100, SineWave(440.0)))
+//! ).ok().expect("failed");
+//! ```
+//!
+//! See: `examples/simple.rs`
+
 use std::num::{ Float, FloatMath, from_f64 };
 use std::mem::size_of;
 
@@ -5,18 +16,25 @@ use music;
 use reader;
 use wave;
 
+/// Quantizes a `f64` sample into `T`.
 pub fn quantize<T>(input: f64) -> T where T: FromPrimitive {
     let quantization_levels = 2.0.powf(size_of::<T>() as f64 * 8.0) - 1.0;
     // Convert from [-1, 1] to take up full quantization range
     from_f64::<T>(input * (quantization_levels / 2.0)).expect("failed to quantize to given type")
 }
 
+/// Quantizes a `Vec<f64>` of samples into `Vec<T>`.
+///
+/// This creates a 16-bit SineWave at 440Hz:
+///
+///     quantize_samples::<i16>(make_samples(1.0, 44100, SineWave(440.0)))
 pub fn quantize_samples<T>(input: Vec<f64>) -> Vec<T> where T: FromPrimitive {
     input.iter().map(|s| { quantize::<T>(*s) }).collect()
 }
 
-pub fn generate<F>(x: f64, f: &F) -> f64 where F: Fn<(f64, ), f64> {
-    f.call((x, ))
+/// Invokes the waveform function `f` at time `t` to return the amplitude at that time.
+pub fn generate<F>(t: f64, f: &F) -> f64 where F: Fn<(f64, ), f64> {
+    f.call((t, ))
 }
 
 pub fn make_samples<F>(length: f64, sample_rate: uint, waveform: F) -> Vec<f64> where F: Fn<(f64, ), f64> {
@@ -31,6 +49,8 @@ pub fn make_samples<F>(length: f64, sample_rate: uint, waveform: F) -> Vec<f64> 
     samples
 }
 
+/// Peak normalizes a `Vec<f64>` of samples such that the maximum and minimum amplitudes of the
+/// `Vec<f64>` samples are within the range [-1.0, 1.0]
 pub fn peak_normalize(samples: Vec<f64>) -> Vec<f64> {
     let peak = samples.iter().fold(0.0f64, |acc, &sample| {
         acc.max(sample)
