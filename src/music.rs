@@ -8,7 +8,6 @@ use std::num::FloatMath;
 ///
 /// ### Semitone table
 ///
-/// ```
 ///  0 C
 ///  1 C#
 ///  2 D
@@ -20,7 +19,6 @@ use std::num::FloatMath;
 ///  8 G#
 ///  9 A
 /// 10 B
-/// ```
 pub fn note(a4: f64, semitone: uint, octave: uint) -> f64 {
     let semitones_from_a4 = octave as int * 12 + semitone as int - 9 - 48;
     a4 * (semitones_from_a4 as f64 * 2.0.ln() / 12.0).exp()

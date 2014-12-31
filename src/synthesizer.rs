@@ -2,6 +2,10 @@
 //! It then writes the generated samples into a 44100Hz WAV file at `out/sine.wav`.
 //!
 //! ```
+//! use synthrs::wave::SineWave;
+//! use synthrs::writer::write_wav;
+//! use synthrs::synthesizer::{quantize_samples, make_samples};
+//!
 //! write_wav("out/sine.wav", 44100,
 //!     quantize_samples::<i16>(make_samples(1.0, 44100, SineWave(440.0)))
 //! ).ok().expect("failed");
@@ -27,7 +31,12 @@ pub fn quantize<T>(input: f64) -> T where T: FromPrimitive {
 ///
 /// This creates a 16-bit SineWave at 440Hz:
 ///
-///     quantize_samples::<i16>(make_samples(1.0, 44100, SineWave(440.0)))
+/// ```
+/// use synthrs::wave::SineWave;
+/// use synthrs::synthesizer::{quantize_samples, make_samples};
+///
+/// quantize_samples::<i16>(make_samples(1.0, 44100, SineWave(440.0)));
+/// ```
 pub fn quantize_samples<T>(input: Vec<f64>) -> Vec<T> where T: FromPrimitive {
     input.iter().map(|s| { quantize::<T>(*s) }).collect()
 }
