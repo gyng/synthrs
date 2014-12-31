@@ -9,12 +9,13 @@ Examples (loud)
 [[bell]](https://dl.dropboxusercontent.com/u/38256631/bell.ogg)
 [[mountainking]](https://dl.dropboxusercontent.com/u/38256631/mountainking.ogg)
 [[rustle]](https://dl.dropboxusercontent.com/u/38256631/rustle.ogg)
+[[assorted synthesized MIDIs]](http://sugoi.pw/samples/)
 
 ## Features
 
 * Not too difficult syntax for writing your own tones (see examples)
 * Basic filters (low-pass, high-pass, band-pass, band-reject)
-* MIDI format0 input
+* MIDI input
 * PCM or WAV output
 
 ## Try
