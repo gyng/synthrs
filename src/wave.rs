@@ -46,6 +46,16 @@ impl Fn<(f64, ), f64> for TriangleWave {
 }
 
 #[deriving(Copy)]
+pub struct TangentWave(pub f64);
+
+impl Fn<(f64, ), f64> for TangentWave {
+    extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
+        let TangentWave(frequency) = *self;
+        FloatMath::tan(t * frequency * PI)
+    }
+}
+
+#[deriving(Copy)]
 // http://computermusicresource.com/Simple.bell.tutorial.html
 pub struct Bell(pub f64, pub f64, pub f64);
 

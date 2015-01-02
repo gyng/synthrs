@@ -8,7 +8,7 @@ use std::num::Float;
 use std::num::FloatMath;
 
 use synthrs::synthesizer::{ make_samples, quantize_samples };
-use synthrs::wave::{ SineWave, SquareWave, SawtoothWave, TriangleWave, Bell };
+use synthrs::wave::{ SineWave, SquareWave, SawtoothWave, TriangleWave, TangentWave, Bell };
 use synthrs::writer::{ write_pcm, write_wav };
 
 fn main() {
@@ -36,6 +36,10 @@ fn main() {
 
     write_wav("out/triangle.wav", 44100,
         quantize_samples::<i16>(make_samples(1.0, 44100, TriangleWave(440.0)))
+    ).ok().expect("failed");
+
+    write_wav("out/tangent.wav", 44100,
+        quantize_samples::<i16>(make_samples(1.0, 44100, TangentWave(440.0)))
     ).ok().expect("failed");
 
     // Custom function for tone generation, t is in seconds
