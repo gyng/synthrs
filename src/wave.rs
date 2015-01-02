@@ -51,7 +51,7 @@ pub struct TangentWave(pub f64);
 impl Fn<(f64, ), f64> for TangentWave {
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
         let TangentWave(frequency) = *self;
-        FloatMath::tan(t * frequency * PI).max(0.0).min(1.0)
+        ((FloatMath::tan(t * frequency * PI) - 0.5) / 4.0).max(-1.0).min(1.0)
     }
 }
 
