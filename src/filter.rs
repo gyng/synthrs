@@ -12,6 +12,7 @@
 //!         the cutoff "blends", or how harsh a cutoff this is.
 
 use std::f64::consts::PI;
+use std::iter::range;
 use std::num::Float;
 use std::num::FloatMath;
 
@@ -25,9 +26,9 @@ pub fn lowpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
         (x * PI).sin() / (x * PI)
     };
 
-    let sinc_wave = Vec::from_fn(n, |i| {
+    let sinc_wave: Vec<f64> = range(0, n).map(|i| {
         sinc(2.0 * cutoff * (i as f64 - (n as f64 - 1.0) / 2.0))
-    });
+    }).collect();
 
     let blackman_window = blackman_window(n);
 
@@ -46,10 +47,10 @@ pub fn lowpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
 }
 
 pub fn blackman_window(size: uint) -> Vec<f64> {
-    Vec::from_fn(size, |i| {
+    range(0, size).map(|i| {
         0.42 - 0.5 * (2.0 * PI * i as f64 / (size as f64 - 1.0)).cos()
         + 0.08 * (4.0 * PI * i as f64 / (size as f64 - 1.0)).cos()
-    })
+    }).collect()
 }
 
 /// Creates a high-pass filter. Frequencies above the cutoff are preserved when

@@ -54,7 +54,7 @@ fn main() {
     write_wav("out/whitenoise.wav", 44100,
         quantize_samples::<i16>(
             make_samples(1.0, 44100, |_t: f64| -> f64 {
-                let mut rng = rand::task_rng();
+                let mut rng = rand::thread_rng();
                 (rng.gen::<f64>() - 0.5) * 2.0
             })
         )
@@ -83,7 +83,7 @@ fn main() {
     write_wav("out/racecar.wav", 44100,
         quantize_samples::<i16>(
             make_samples(15.0, 44100, |t: f64| -> f64 {
-                let mut rng = rand::task_rng();
+                let mut rng = rand::thread_rng();
                 let mut out = 0.0;
                 if t < 14.0 { out += SawtoothWave(40.63 * (t / 2.0))(t); } // Engine
                 if t < 1.0 { out += SawtoothWave(30.0)(t) * 10.0; } // Engine start
