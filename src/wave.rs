@@ -30,7 +30,18 @@ impl Fn<(f64, ), f64> for SawtoothWave {
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
         let SawtoothWave(frequency) = *self;
         let t_factor = t * frequency;
-        t_factor - t_factor.floor()
+        t_factor - t_factor.floor() - 0.5
+    }
+}
+
+#[deriving(Copy)]
+pub struct TriangleWave(pub f64);
+
+impl Fn<(f64, ), f64> for TriangleWave {
+    extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
+        let TriangleWave(frequency) = *self;
+        let sawtooth_wave = SawtoothWave(frequency);
+        (sawtooth_wave(t).abs() - 0.25) * 4.0
     }
 }
 
