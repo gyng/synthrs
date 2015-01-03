@@ -93,3 +93,37 @@ impl Fn<(f64, ), f64> for Bell {
          h9(t) * 0.00390625 * envelope(t, 19.6)) / 2.0
     }
 }
+
+/// Bastardised generic Karplus-Strong synthesis.
+/// Try a Sawtooth, or even a Bell wave.
+///
+/// `attack` in seconds
+/// `decay` in seconds
+/// `sharpness` 0-1 is decent
+#[deriving(Copy)]
+pub struct KarplusStrong<'a, F>(pub F, pub f64, pub f64, pub f64, pub f64);
+
+impl<'a, F> Fn<(f64, ), f64> for KarplusStrong<'a, F> where F: Fn<(f64, ), f64> {
+    extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
+        let KarplusStrong(ref wave, attack, decay, sharpness, sample_rate) = *self;
+
+        let tick = 1.0 / sample_rate;
+
+        let envelope = |t: f64, f: f64| -> f64 {
+            let tf = t / f;
+            if tf < attack {
+                (tf / attack).min(1.0)
+            } else {
+                (1.0 - (tf / decay)).max(0.0)
+            }
+        };
+
+        // Pretend we have a delay feature in synthrs, manually unroll delay loops
+        // Any given sample at any given time will have "imaginary past" loops in it
+        range(0, 10u).fold(0.0, |acc, i| {
+            acc + wave.call((t - tick * i as f64, ))
+                * envelope(t + tick * i as f64, decay)
+                * sharpness.powf(i as f64)
+        }) * envelope(t, decay)
+    }
+}

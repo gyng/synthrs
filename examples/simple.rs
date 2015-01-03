@@ -7,8 +7,8 @@ use std::rand::Rng;
 use std::num::Float;
 use std::num::FloatMath;
 
-use synthrs::synthesizer::{ make_samples, quantize_samples };
-use synthrs::wave::{ SineWave, SquareWave, SawtoothWave, TriangleWave, TangentWave, Bell };
+use synthrs::synthesizer::{ make_samples, quantize_samples, peak_normalize };
+use synthrs::wave::{ SineWave, SquareWave, SawtoothWave, TriangleWave, TangentWave, Bell, KarplusStrong };
 use synthrs::writer::{ write_pcm, write_wav };
 
 fn main() {
@@ -77,6 +77,16 @@ fn main() {
             make_samples(10.0, 44100, |t: f64| -> f64 {
                 Bell(200.0, 0.003, 0.5)(t)
             })
+        )
+    ).ok().expect("failed");
+
+    write_wav("out/karplusstrong.wav", 44100,
+        quantize_samples::<i16>(
+            peak_normalize(
+                make_samples(5.0, 44100, |t: f64| -> f64 {
+                    KarplusStrong(SawtoothWave(440.0), 0.01, 1.0, 0.9, 44100.0)(t)
+                })
+            )
         )
     ).ok().expect("failed");
 
