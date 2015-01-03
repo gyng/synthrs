@@ -117,6 +117,18 @@ pub fn cutoff_from_frequency(frequency: f64, sample_rate: uint) -> f64 {
     frequency / sample_rate as f64
 }
 
+/// Simple linear attack/decay envelope. No sustain or release.
+pub fn envelope(relative_t: f64, attack: f64, decay: f64) -> f64 {
+    if relative_t < 0.0 {
+        0.0
+    } else if relative_t < attack {
+        relative_t / attack
+    } else if relative_t < attack + decay {
+        1.0 - (relative_t - attack) / decay
+    } else {
+        0.0
+    }
+}
 
 #[test]
 fn it_convolves() {
@@ -132,4 +144,14 @@ fn it_does_elementwise_addition_of_two_samples() {
     let b = vec!(-1.0, 5.0, 3.0);
     let expected = vec!(0.0, 4.0, -5.0);
     assert_eq!(add(a, b), expected);
+}
+
+#[test]
+fn it_envelopes_a_value() {
+    assert_eq!(envelope(0.25, 1.0, 1.0), 0.25);
+    assert_eq!(envelope(0.5, 1.0, 1.0), 0.5);
+    assert_eq!(envelope(1.0, 1.0, 1.0), 1.0);
+    assert_eq!(envelope(1.5, 1.0, 1.0), 0.5);
+    assert_eq!(envelope(3.0, 1.0, 1.0), 0.0);
+    assert_eq!(envelope(-0.5, 1.0, 1.0), 0.0);
 }

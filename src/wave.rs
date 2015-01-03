@@ -2,6 +2,8 @@ use std::f64::consts::PI;
 use std::num::Float;
 use std::num::FloatMath;
 
+use filter::envelope;
+
 #[deriving(Copy)]
 pub struct SineWave(pub f64);
 
@@ -63,15 +65,6 @@ impl Fn<(f64, ), f64> for Bell {
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
         let Bell(frequency, attack, decay) = *self;
 
-        let envelope = |t: f64, f: f64| -> f64 {
-            let tf = t / f;
-            if tf < attack {
-                (tf / attack).min(1.0)
-            } else {
-                (1.0 - (tf / decay)).max(0.0)
-            }
-        };
-
         // Frequency, amplitude, decay
         let harmonics_table: [(f64, f64, f64); 9] = [
             (0.56, 1.5,        1.0),
@@ -86,12 +79,12 @@ impl Fn<(f64, ), f64> for Bell {
         ];
 
         harmonics_table.iter().fold(0.0, |acc, h| {
-            acc + SineWave(frequency * h.0)(t) * h.1 * envelope(t, h.2)
+            acc + SineWave(frequency * h.0)(t) * h.1 * envelope(t, attack, decay * h.2)
         }) / 2.0
     }
 }
 
-/// Bastardised generic Karplus-Strong synthesis.
+/// Bastardised and butchered generic Karplus-Strong synthesis.
 /// Try a Sawtooth, or even a Bell wave.
 ///
 /// `attack` in seconds
@@ -106,21 +99,12 @@ impl<'a, F> Fn<(f64, ), f64> for KarplusStrong<'a, F> where F: Fn<(f64, ), f64> 
 
         let tick = 1.0 / sample_rate;
 
-        let envelope = |t: f64, f: f64| -> f64 {
-            let tf = t / f;
-            if tf < attack {
-                (tf / attack).min(1.0)
-            } else {
-                (1.0 - (tf / decay)).max(0.0)
-            }
-        };
-
         // Pretend we have a delay feature in synthrs, manually unroll delay loops
         // Any given sample at any given time will have "imaginary past" loops in it
         range(0, 10u).fold(0.0, |acc, i| {
             acc + wave.call((t - tick * i as f64, ))
-                * envelope(t + tick * i as f64, decay)
+                * envelope(t + tick * i as f64, attack, decay)
                 * sharpness.powf(i as f64)
-        }) * envelope(t, decay)
+        }) * envelope(t, attack, decay)
     }
 }
