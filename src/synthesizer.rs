@@ -117,9 +117,12 @@ pub fn make_samples_from_midi(sample_rate: uint, filename: &str) -> Vec<f64> {
             for &(note, velocity, start_tick) in notes_on_for_ticks[tick].iter() {
                 let frequency = music::note_midi(440.0, note as uint);
                 let loudness = (6.908 * (velocity as f64 / 255.0)).exp() / 1000.0;
+                let attack = 0.01;
+                let decay = 1.0;
+                let sharpness = 0.8;
                 let start_t = start_tick as f64 * 60.0 / song.bpm as f64 / song.time_unit as f64;
                 let relative_t = t - start_t;
-                out += loudness * wave::SquareWave(frequency)(relative_t)
+                out += loudness * wave::KarplusStrong(wave::SquareWave(frequency), attack, decay, sharpness, 44100.0)(relative_t)
             }
         }
 
