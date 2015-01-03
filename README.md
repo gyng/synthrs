@@ -4,23 +4,26 @@
 
 Toy synthesiser library in Rust.
 
-Examples (loud)
-[[busy signal]](https://dl.dropboxusercontent.com/u/38256631/busysignal.ogg)
-[[bell]](https://dl.dropboxusercontent.com/u/38256631/bell.ogg)
-[[mountainking]](https://dl.dropboxusercontent.com/u/38256631/mountainking.ogg)
-[[rustle]](https://dl.dropboxusercontent.com/u/38256631/rustle.ogg)
-[[assorted synthesized MIDIs]](http://sugoi.pw/samples/)
-
 ## Features
 
 * Not too difficult syntax for writing your own tones (see examples)
-* Basic filters (low-pass, high-pass, band-pass, band-reject)
-* MIDI input
+* Basic filters (low-pass, high-pass, band-pass, band-reject, attack/decay envelope)
+* Basic waveforms (sine, square, triangle, sawtooth, tangent, basterdised Karplus-Strong)
+* MIDI synthesis
 * PCM or WAV output
+
+#### Examples (loud)
+
+* [busy signal](https://dl.dropboxusercontent.com/u/38256631/busysignal.ogg)
+* [bell](https://dl.dropboxusercontent.com/u/38256631/bell.ogg)
+* [mtnking-pure](https://dl.dropboxusercontent.com/u/38256631/mountainking-puresquare.ogg) *pure square wave*
+* [mtnking-envelope](https://dl.dropboxusercontent.com/u/38256631/mountainking.ogg) *butchered Karplus-Strong square wave with attack and decay*
+* [rustle](https://dl.dropboxusercontent.com/u/38256631/rustle.ogg)
+* [assorted synthesized MIDIs](http://sugoi.pw/samples/) *pure square waves*
 
 ## Try
 
-To run examples
+To run examples (list below)
 
     cargo run --example EXAMPLE_NAME
 
@@ -29,9 +32,27 @@ To use as a library, add this to `Cargo.toml`
     [dependencies.synthrs]
     git = "https://github.com/gyng/synthrs"
 
-and then
+To write a custom tone to a WAV file
 
-    extern crate synthrs;
+```rust
+extern crate synthrs;
+
+use synthrs::synthesizer::{ make_samples, quantize_samples };
+use synthrs::wave::SquareWave;
+use synthrs::writer::write_wav;
+
+fn main() {
+    write_wav("out/wolftone.wav", 44100,
+        quantize_samples::<i16>(
+            make_samples(1.0, 44100, |t: f64| -> f64 {
+                (SquareWave(1000.0)(t) + SquareWave(1020.0)(t)) / 2.0
+            })
+        )
+    ).ok().expect("failed");
+}
+```
+
+More examples are in `/example`.
 
 ### Examples
 
