@@ -4,7 +4,7 @@ use std::num::FloatMath;
 
 use filter::envelope;
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct SineWave(pub f64);
 
 impl Fn<(f64, ), f64> for SineWave {
@@ -14,7 +14,7 @@ impl Fn<(f64, ), f64> for SineWave {
     }
 }
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct SquareWave(pub f64);
 
 impl Fn<(f64, ), f64> for SquareWave {
@@ -25,7 +25,7 @@ impl Fn<(f64, ), f64> for SquareWave {
     }
 }
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct SawtoothWave(pub f64);
 
 impl Fn<(f64, ), f64> for SawtoothWave {
@@ -36,7 +36,7 @@ impl Fn<(f64, ), f64> for SawtoothWave {
     }
 }
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct TriangleWave(pub f64);
 
 impl Fn<(f64, ), f64> for TriangleWave {
@@ -47,7 +47,7 @@ impl Fn<(f64, ), f64> for TriangleWave {
     }
 }
 
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct TangentWave(pub f64);
 
 impl Fn<(f64, ), f64> for TangentWave {
@@ -57,7 +57,7 @@ impl Fn<(f64, ), f64> for TangentWave {
     }
 }
 
-#[deriving(Copy)]
+#[derive(Copy)]
 // http://computermusicresource.com/Simple.bell.tutorial.html
 pub struct Bell(pub f64, pub f64, pub f64);
 
@@ -90,7 +90,7 @@ impl Fn<(f64, ), f64> for Bell {
 /// `attack` in seconds
 /// `decay` in seconds
 /// `sharpness` 0-1 is decent
-#[deriving(Copy)]
+#[derive(Copy)]
 pub struct KarplusStrong<'a, F>(pub F, pub f64, pub f64, pub f64, pub f64);
 
 impl<'a, F> Fn<(f64, ), f64> for KarplusStrong<'a, F> where F: Fn<(f64, ), f64> {

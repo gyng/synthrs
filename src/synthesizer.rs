@@ -13,7 +13,7 @@
 //!
 //! See: `examples/simple.rs`
 
-use std::num::{ Float, FloatMath, from_f64 };
+use std::num::{ Float, FloatMath, from_f64, FromPrimitive };
 use std::mem::size_of;
 
 use music;
