@@ -72,25 +72,22 @@ impl Fn<(f64, ), f64> for Bell {
             }
         };
 
-        let h1 = SineWave(frequency * 0.56);
-        let h2 = SineWave(frequency * 0.92);
-        let h3 = SineWave(frequency * 1.19);
-        let h4 = SineWave(frequency * 1.71);
-        let h5 = SineWave(frequency * 2.00);
-        let h6 = SineWave(frequency * 2.74);
-        let h7 = SineWave(frequency * 3.00);
-        let h8 = SineWave(frequency * 3.76);
-        let h9 = SineWave(frequency * 4.07);
+        // Frequency, amplitude, decay
+        let harmonics_table: [(f64, f64, f64); 9] = [
+            (0.56, 1.5,        1.0),
+            (0.92, 0.5,        2.0),
+            (1.19, 0.25,       4.0),
+            (1.71, 0.125,      6.0),
+            (2.00, 0.0625,     8.4),
+            (2.74, 0.03125,    10.8),
+            (3.00, 0.015625,   13.6),
+            (3.76, 0.0078125,  16.4),
+            (4.07, 0.00390625, 19.6)
+        ];
 
-        (h1(t) * 1.0 * envelope(t, 1.0) +
-         h2(t) * 0.5 * envelope(t, 2.0) +
-         h3(t) * 0.25 * envelope(t, 4.0) +
-         h4(t) * 0.125 * envelope(t, 6.0) +
-         h5(t) * 0.0625 * envelope(t, 8.4) +
-         h6(t) * 0.03125 * envelope(t, 10.8) +
-         h7(t) * 0.015625 * envelope(t, 13.6) +
-         h8(t) * 0.0078125 * envelope(t, 16.4) +
-         h9(t) * 0.00390625 * envelope(t, 19.6)) / 2.0
+        harmonics_table.iter().fold(0.0, |acc, h| {
+            acc + SineWave(frequency * h.0)(t) * h.1 * envelope(t, h.2)
+        }) / 2.0
     }
 }
 
