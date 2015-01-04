@@ -238,7 +238,9 @@ impl<'a, T> MidiEventIterator<'a, T> where T: Reader+'a {
 }
 
 /// Unhandled messages are dropped (typically, obscure system messages)
-impl<'a, T> Iterator<Result<MidiEvent, IoError>> for MidiEventIterator<'a, T> where T: Reader+'a {
+impl<'a, T> Iterator for MidiEventIterator<'a, T> where T: Reader+'a {
+    type Item = Result<MidiEvent, IoError>;
+
     fn next(&mut self) -> Option<Result<MidiEvent, IoError>> {
         while !self.end_of_track {
             let delta_time = try_some!(read_variable_number(self.reader));
