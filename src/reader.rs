@@ -213,7 +213,7 @@ impl<'a, T> MidiEventIterator<'a, T> where T: Reader+'a {
                 let tempo_byte1 = if self.is_running { self.limbo_byte } else { try_some!(self.reader.read_byte()) };
                 let tempo_byte2 = try_some!(self.reader.read_byte());
                 let tempo_byte3 = try_some!(self.reader.read_byte());
-                let tempo = (tempo_byte1 as uint << 16) as uint + (tempo_byte2 as uint << 8) as uint + tempo_byte3 as uint;
+                let tempo = ((tempo_byte1 as uint) << 16) as uint + ((tempo_byte2 as uint) << 8) as uint + tempo_byte3 as uint;
 
                 return Some(Ok(MidiEvent {
                     event_type: self.running_status.unwrap(),
