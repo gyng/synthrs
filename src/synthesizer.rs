@@ -110,7 +110,7 @@ pub fn make_samples_from_midi(sample_rate: uint, filename: &str) -> Vec<f64> {
         }
     }
 
-    let midi_frequency_function = |t: f64| -> f64 {
+    let midi_frequency_function = |&: t: f64| -> f64 {
         let tick = (t * song.bpm * song.time_unit as f64 / 60.0) as uint;
         let mut out = 0.0;
 

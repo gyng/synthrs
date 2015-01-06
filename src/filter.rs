@@ -22,7 +22,7 @@ pub fn lowpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
     let mut n = (4.0 / band).ceil() as uint;
     if n % 2 == 1 { n += 1; }
 
-    let sinc = |x: f64| -> f64 {
+    let sinc = |&: x: f64| -> f64 {
         (x * PI).sin() / (x * PI)
     };
 
