@@ -1,8 +1,5 @@
 use std::num::Float;
 
-#[cfg(test)]
-use std::num::FloatMath;
-
 /// Calculates the frequency (equal-tempered) given A4, the semitone and the octave.
 /// C4 = `note(440.0, 0u, 4u)`
 ///
@@ -39,8 +36,8 @@ fn it_equal_tempers() {
     let a4 = 440.0;
     let d3 = 146.83;
     let fs6 = 1479.98;
-    assert!(FloatMath::abs_sub(note(a4, 9, 4), a4) < threshold);
-    assert!(FloatMath::abs_sub(note(a4, 0, 4), c4) < threshold);
-    assert!(FloatMath::abs_sub(note(a4, 2, 3), d3) < threshold);
-    assert!(FloatMath::abs_sub(note(a4, 6, 6), fs6) < threshold);
+    assert!(Float::abs_sub(note(a4, 9, 4), a4) < threshold);
+    assert!(Float::abs_sub(note(a4, 0, 4), c4) < threshold);
+    assert!(Float::abs_sub(note(a4, 2, 3), d3) < threshold);
+    assert!(Float::abs_sub(note(a4, 6, 6), fs6) < threshold);
 }

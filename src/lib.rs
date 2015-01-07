@@ -1,4 +1,4 @@
-#![feature(associated_types, lang_items, macro_rules, unboxed_closures)]
+#![feature(lang_items, unboxed_closures)]
 #![allow(dead_code)]
 
 pub mod filter;

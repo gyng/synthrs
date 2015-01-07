@@ -5,7 +5,6 @@ extern crate synthrs;
 use std::rand;
 use std::rand::Rng;
 use std::num::Float;
-use std::num::FloatMath;
 
 use synthrs::synthesizer::{ make_samples, quantize_samples, peak_normalize };
 use synthrs::wave::{ SineWave, SquareWave, SawtoothWave, TriangleWave, TangentWave, Bell, KarplusStrong };

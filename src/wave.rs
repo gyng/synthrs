@@ -1,6 +1,5 @@
 use std::f64::consts::PI;
 use std::num::Float;
-use std::num::FloatMath;
 
 use filter::envelope;
 
@@ -10,7 +9,7 @@ pub struct SineWave(pub f64);
 impl Fn<(f64, ), f64> for SineWave {
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
         let SineWave(frequency) = *self;
-        FloatMath::sin(t * frequency * 2.0 * PI)
+        Float::sin(t * frequency * 2.0 * PI)
     }
 }
 
@@ -53,7 +52,7 @@ pub struct TangentWave(pub f64);
 impl Fn<(f64, ), f64> for TangentWave {
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
         let TangentWave(frequency) = *self;
-        ((FloatMath::tan(t * frequency * PI) - 0.5) / 4.0).max(-1.0).min(1.0)
+        ((Float::tan(t * frequency * PI) - 0.5) / 4.0).max(-1.0).min(1.0)
     }
 }
 

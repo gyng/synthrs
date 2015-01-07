@@ -14,7 +14,6 @@
 use std::f64::consts::PI;
 use std::iter::range;
 use std::num::Float;
-use std::num::FloatMath;
 
 /// Creates a low-pass filter. Frequencies below the cutoff are preserved when
 /// samples are convolved with this filter.
