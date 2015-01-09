@@ -47,11 +47,11 @@ pub fn generate<F>(t: f64, f: &F) -> f64 where F: Fn<(f64, ), f64> {
     f.call((t, ))
 }
 
-pub fn make_samples<F>(length: f64, sample_rate: uint, waveform: F) -> Vec<f64> where F: Fn<(f64, ), f64> {
-    let num_samples = (sample_rate as f64 * length).floor() as uint;
+pub fn make_samples<F>(length: f64, sample_rate: usize, waveform: F) -> Vec<f64> where F: Fn<(f64, ), f64> {
+    let num_samples = (sample_rate as f64 * length).floor() as usize;
     let mut samples: Vec<f64> = Vec::with_capacity(num_samples);
 
-    for i in range(0u, num_samples) {
+    for i in range(0us, num_samples) {
         let t = i as f64 / sample_rate as f64;
         samples.push(generate(t, &waveform));
     }
@@ -73,13 +73,13 @@ pub fn peak_normalize(samples: Vec<f64>) -> Vec<f64> {
 
 // This is really awful, is there a more elegant way to do this?
 // TODO: Make the instrument a parameter (perhaps using an Instrument trait?)
-pub fn make_samples_from_midi(sample_rate: uint, filename: &str) -> Vec<f64> {
+pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
     let song = reader::read_midi(filename).unwrap();
     let length = (60.0 * song.max_time as f64) / (song.bpm * song.time_unit as f64);
 
-    let mut notes_on_for_ticks: Vec<Vec<(u8, u8, uint)>> = Vec::new();
+    let mut notes_on_for_ticks: Vec<Vec<(u8, u8, usize)>> = Vec::new();
     for _ in range(0, song.max_time) {
-        let notes_on_for_tick: Vec<(u8, u8, uint)> = Vec::new();
+        let notes_on_for_tick: Vec<(u8, u8, usize)> = Vec::new();
         notes_on_for_ticks.push(notes_on_for_tick);
     }
 
@@ -111,12 +111,12 @@ pub fn make_samples_from_midi(sample_rate: uint, filename: &str) -> Vec<f64> {
     }
 
     let midi_frequency_function = |&: t: f64| -> f64 {
-        let tick = (t * song.bpm * song.time_unit as f64 / 60.0) as uint;
+        let tick = (t * song.bpm * song.time_unit as f64 / 60.0) as usize;
         let mut out = 0.0;
 
         if tick < notes_on_for_ticks.len() {
             for &(note, velocity, start_tick) in notes_on_for_ticks[tick].iter() {
-                let frequency = music::note_midi(440.0, note as uint);
+                let frequency = music::note_midi(440.0, note as usize);
                 let loudness = (6.908 * (velocity as f64 / 255.0)).exp() / 1000.0;
                 let attack = 0.01;
                 let decay = 1.0;
@@ -129,10 +129,10 @@ pub fn make_samples_from_midi(sample_rate: uint, filename: &str) -> Vec<f64> {
         out
     };
 
-    let num_samples = (sample_rate as f64 * length).floor() as uint;
+    let num_samples = (sample_rate as f64 * length).floor() as usize;
     let mut samples: Vec<f64> = Vec::with_capacity(num_samples);
 
-    for i in range(0u, num_samples) {
+    for i in range(0us, num_samples) {
         let t = i as f64 / sample_rate as f64;
         samples.push(midi_frequency_function(t));
     }

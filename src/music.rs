@@ -16,14 +16,14 @@ use std::num::Float;
 ///  8 G#
 ///  9 A
 /// 10 B
-pub fn note(a4: f64, semitone: uint, octave: uint) -> f64 {
-    let semitones_from_a4 = octave as int * 12 + semitone as int - 9 - 48;
+pub fn note(a4: f64, semitone: usize, octave: usize) -> f64 {
+    let semitones_from_a4 = octave as isize * 12 + semitone as isize - 9 - 48;
     a4 * (semitones_from_a4 as f64 * 2.0.ln() / 12.0).exp()
 }
 
 /// Calculates the frequency (equal-tempered) given A4 and the MIDI note value.
 /// C4 = `note_midi(440.0, 72u)`
-pub fn note_midi(a4: f64, midi_note: uint) -> f64 {
+pub fn note_midi(a4: f64, midi_note: usize) -> f64 {
     let semitone = (midi_note - 24) % 12;
     let octave = ((midi_note - 24) / 12) + 1;
     note(a4, semitone, octave)

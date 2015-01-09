@@ -1,5 +1,5 @@
 #![feature(lang_items, unboxed_closures)]
-#![allow(dead_code)]
+#![allow(dead_code, unstable)]
 
 pub mod filter;
 pub mod music;

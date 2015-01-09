@@ -18,7 +18,7 @@ use std::num::Float;
 /// Creates a low-pass filter. Frequencies below the cutoff are preserved when
 /// samples are convolved with this filter.
 pub fn lowpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
-    let mut n = (4.0 / band).ceil() as uint;
+    let mut n = (4.0 / band).ceil() as usize;
     if n % 2 == 1 { n += 1; }
 
     let sinc = |&: x: f64| -> f64 {
@@ -45,7 +45,7 @@ pub fn lowpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
     }).collect()
 }
 
-pub fn blackman_window(size: uint) -> Vec<f64> {
+pub fn blackman_window(size: usize) -> Vec<f64> {
     range(0, size).map(|i| {
         0.42 - 0.5 * (2.0 * PI * i as f64 / (size as f64 - 1.0)).cos()
         + 0.08 * (4.0 * PI * i as f64 / (size as f64 - 1.0)).cos()
@@ -89,15 +89,15 @@ pub fn spectral_invert(filter: Vec<f64>) -> Vec<f64> {
 
 pub fn convolve(filter: Vec<f64>, input: Vec<f64>) -> Vec<f64> {
     let mut output: Vec<f64> = Vec::new();
-    let h_len = (filter.len() / 2) as int;
+    let h_len = (filter.len() / 2) as isize;
 
-    for i in range(-(filter.len() as int / 2), input.len() as int - 1) {
+    for i in range(-(filter.len() as isize / 2), input.len() as isize - 1) {
         output.push(0.0);
-        for j in range(0i, filter.len() as int) {
+        for j in range(0is, filter.len() as isize) {
             let input_idx = i + j;
             let output_idx = i + h_len;
-            if input_idx < 0 || input_idx >= input.len() as int { continue }
-            output[output_idx as uint] += input[input_idx as uint] * filter[j as uint]
+            if input_idx < 0 || input_idx >= input.len() as isize { continue }
+            output[output_idx as usize] += input[input_idx as usize] * filter[j as usize]
         }
     }
 
@@ -112,7 +112,7 @@ pub fn add(left: Vec<f64>, right: Vec<f64>) -> Vec<f64> {
 
 /// Returns the cutoff fraction for a given cutoff frequency at a sample rate, which can be
 /// used for filter creation.
-pub fn cutoff_from_frequency(frequency: f64, sample_rate: uint) -> f64 {
+pub fn cutoff_from_frequency(frequency: f64, sample_rate: usize) -> f64 {
     frequency / sample_rate as f64
 }
 

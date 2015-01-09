@@ -58,17 +58,17 @@ pub enum MidiMetaEventType {
 
 #[derive(Show)]
 pub struct MidiSong {
-    pub max_time: uint,
-    pub time_unit: int,
+    pub max_time: usize,
+    pub time_unit: isize,
     pub tracks: Vec<MidiTrack>,
-    pub track_count: uint,
+    pub track_count: usize,
     pub bpm: f64
 }
 
 #[derive(Show)]
 pub struct MidiTrack {
     pub events: Vec<MidiEvent>,
-    pub max_time: uint
+    pub max_time: usize
 }
 
 impl MidiTrack {
@@ -86,11 +86,11 @@ pub struct MidiEvent {
     pub event_type: MidiEventType,
     pub system_event_type: Option<MidiSystemEventType>,
     pub meta_event_type: Option<MidiMetaEventType>,
-    pub time: uint,
-    pub delta_time: uint,
+    pub time: usize,
+    pub delta_time: usize,
     pub channel: u8,
-    pub value1: uint,
-    pub value2: Option<uint>
+    pub value1: usize,
+    pub value2: Option<usize>
 }
 
 // Similar to try! but this wraps the IoError return in an Option instead
@@ -108,8 +108,8 @@ macro_rules! try_some(
 // I don't want to pass the "limbo_byte" around functions, so I kept it in the Iterator.
 struct MidiEventIterator<'a, T> where T: Reader+'a {
     reader: &'a mut T,
-    time: uint,
-    delta_time: uint,
+    time: usize,
+    delta_time: usize,
     running_status: Option<MidiEventType>,
     running_channel: Option<u8>,
     limbo_byte: u8,
@@ -139,7 +139,7 @@ impl<'a, T> MidiEventIterator<'a, T> where T: Reader+'a {
             time: self.time,
             delta_time: self.delta_time,
             channel: self.running_channel.unwrap(),
-            value1: (if self.is_running { self.limbo_byte } else { try!(self.reader.read_byte()) }) as uint,
+            value1: (if self.is_running { self.limbo_byte } else { try!(self.reader.read_byte()) }) as usize,
             value2: None
         })
     }
@@ -152,8 +152,8 @@ impl<'a, T> MidiEventIterator<'a, T> where T: Reader+'a {
             time: self.time,
             delta_time: self.delta_time,
             channel: self.running_channel.unwrap(),
-            value1: (if self.is_running { self.limbo_byte } else { try!(self.reader.read_byte()) }) as uint,
-            value2: Some(try!(self.reader.read_byte()) as uint)
+            value1: (if self.is_running { self.limbo_byte } else { try!(self.reader.read_byte()) }) as usize,
+            value2: Some(try!(self.reader.read_byte()) as usize)
         })
     }
 
@@ -209,11 +209,11 @@ impl<'a, T> MidiEventIterator<'a, T> where T: Reader+'a {
             },
 
             Some(MidiMetaEventType::TempoSetting) => {
-                assert_eq!(meta_data_size, 3u);
+                assert_eq!(meta_data_size, 3us);
                 let tempo_byte1 = if self.is_running { self.limbo_byte } else { try_some!(self.reader.read_byte()) };
                 let tempo_byte2 = try_some!(self.reader.read_byte());
                 let tempo_byte3 = try_some!(self.reader.read_byte());
-                let tempo = ((tempo_byte1 as uint) << 16) as uint + ((tempo_byte2 as uint) << 8) as uint + tempo_byte3 as uint;
+                let tempo = ((tempo_byte1 as usize) << 16) as usize + ((tempo_byte2 as usize) << 8) as usize + tempo_byte3 as usize;
 
                 return Some(Ok(MidiEvent {
                     event_type: self.running_status.unwrap(),
@@ -229,7 +229,7 @@ impl<'a, T> MidiEventIterator<'a, T> where T: Reader+'a {
 
             _ => {
                 // Discard unhandled meta messages
-                try_some!(self.reader.read_exact(meta_data_size as uint));
+                try_some!(self.reader.read_exact(meta_data_size as usize));
             }
         }
 
@@ -292,11 +292,11 @@ pub fn read_midi(filename: &str) -> Result<MidiSong, IoError> {
         panic!("unsupported time division format (SMPTE not supported)")
     }
 
-    for _ in range(0u, song.track_count) {
+    for _ in range(0us, song.track_count) {
         song.tracks.push(try!(read_midi_track(&mut reader)));
     }
 
-    song.max_time = song.tracks.iter().fold(0u, |acc, track| {
+    song.max_time = song.tracks.iter().fold(0us, |acc, track| {
         max(acc, track.max_time)
     });
 
@@ -326,9 +326,9 @@ fn read_midi_header<T>(reader: &mut T) -> IoResult<MidiSong> where T: Reader {
 
     Ok(MidiSong {
         max_time: 0,
-        time_unit: time_division as int,
+        time_unit: time_division as isize,
         tracks: Vec::new(),
-        track_count: track_count as uint,
+        track_count: track_count as usize,
         bpm: 120.0 // MIDI default BPM, can be changed by MIDI events later
     })
 }
@@ -346,7 +346,7 @@ fn read_midi_track<T>(reader: &mut T) -> Result<MidiTrack, IoError> where T: Rea
     }).collect::<Vec<_>>();
 
     track.max_time = if track.events.len() > 1 {
-        track.events[track.events.len() - 1u].time
+        track.events[track.events.len() - 1us].time
     } else {
         0
     };
@@ -367,7 +367,7 @@ fn read_sysex<T>(reader: &mut T) -> Result<(), IoError> where T: Reader {
     Ok(())
 }
 
-fn read_variable_number<T>(reader: &mut T) -> IoResult<uint> where T: Reader {
+fn read_variable_number<T>(reader: &mut T) -> IoResult<usize> where T: Reader {
     // http://en.wikipedia.org/wiki/Variable-length_quantity
     // cont. bit---V
     //             7[6 5 4 3 2 1 0]+-+
@@ -377,10 +377,10 @@ fn read_variable_number<T>(reader: &mut T) -> IoResult<uint> where T: Reader {
     //              no more bytes: 0 b b b b b b b
 
     let mut octet = try!(reader.read_byte());
-    let mut value = (octet & 0b01111111) as uint;
+    let mut value = (octet & 0b01111111) as usize;
     while octet >= 0b10000000 {
         octet = try!(reader.read_byte());
-        value = (value << 7) as uint + (octet & 0b01111111) as uint;
+        value = (value << 7) as usize + (octet & 0b01111111) as usize;
     }
 
     Ok(value)
@@ -431,5 +431,5 @@ fn it_parses_a_midi_file_with_running_status() {
 #[test]
 fn it_parses_the_bpm_of_a_midi_file() {
     let song = read_midi("tests/assets/running_status.mid").unwrap();
-    assert_eq!(song.bpm as uint, 160);
+    assert_eq!(song.bpm as usize, 160);
 }

@@ -100,7 +100,7 @@ impl<'a, F> Fn<(f64, ), f64> for KarplusStrong<'a, F> where F: Fn<(f64, ), f64> 
 
         // Pretend we have a delay feature in synthrs, manually unroll delay loops
         // Any given sample at any given time will have "imaginary past" loops in it
-        range(0, 10u).fold(0.0, |acc, i| {
+        range(0, 10us).fold(0.0, |acc, i| {
             acc + wave.call((t - tick * i as f64, ))
                 * envelope(t + tick * i as f64, attack, decay)
                 * sharpness.powf(i as f64)

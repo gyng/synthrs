@@ -15,7 +15,7 @@ pub fn write_pcm(filename: &str, samples: Vec<i16>) -> IoResult<()> {
 }
 
 // See: https://ccrma.stanford.edu/courses/422/projects/WaveFormat/
-pub fn write_wav(filename: &str, sample_rate: uint, samples: Vec<i16>) -> IoResult<()> {
+pub fn write_wav(filename: &str, sample_rate: usize, samples: Vec<i16>) -> IoResult<()> {
     let path = Path::new(filename);
     let mut f = match File::open_mode(&path, Truncate, Write) {
         Ok(f) => f,

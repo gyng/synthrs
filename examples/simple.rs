@@ -1,4 +1,5 @@
 #![feature(unboxed_closures)]
+#![allow(unstable)]
 
 extern crate synthrs;
 
