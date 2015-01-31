@@ -6,7 +6,9 @@ use filter::envelope;
 #[derive(Copy)]
 pub struct SineWave(pub f64);
 
-impl Fn<(f64, ), f64> for SineWave {
+impl Fn<(f64, )> for SineWave {
+    type Output = f64;
+
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
         let SineWave(frequency) = *self;
         Float::sin(t * frequency * 2.0 * PI)
@@ -16,7 +18,9 @@ impl Fn<(f64, ), f64> for SineWave {
 #[derive(Copy)]
 pub struct SquareWave(pub f64);
 
-impl Fn<(f64, ), f64> for SquareWave {
+impl Fn<(f64, )> for SquareWave {
+    type Output = f64;
+
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
         let SquareWave(frequency) = *self;
         let sin_wave = SineWave(frequency);
@@ -27,7 +31,9 @@ impl Fn<(f64, ), f64> for SquareWave {
 #[derive(Copy)]
 pub struct SawtoothWave(pub f64);
 
-impl Fn<(f64, ), f64> for SawtoothWave {
+impl Fn<(f64, )> for SawtoothWave {
+    type Output = f64;
+
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
         let SawtoothWave(frequency) = *self;
         let t_factor = t * frequency;
@@ -38,7 +44,9 @@ impl Fn<(f64, ), f64> for SawtoothWave {
 #[derive(Copy)]
 pub struct TriangleWave(pub f64);
 
-impl Fn<(f64, ), f64> for TriangleWave {
+impl Fn<(f64, )> for TriangleWave {
+    type Output = f64;
+
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
         let TriangleWave(frequency) = *self;
         let sawtooth_wave = SawtoothWave(frequency);
@@ -49,7 +57,9 @@ impl Fn<(f64, ), f64> for TriangleWave {
 #[derive(Copy)]
 pub struct TangentWave(pub f64);
 
-impl Fn<(f64, ), f64> for TangentWave {
+impl Fn<(f64, )> for TangentWave {
+    type Output = f64;
+
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
         let TangentWave(frequency) = *self;
         ((Float::tan(t * frequency * PI) - 0.5) / 4.0).max(-1.0).min(1.0)
@@ -60,7 +70,9 @@ impl Fn<(f64, ), f64> for TangentWave {
 // http://computermusicresource.com/Simple.bell.tutorial.html
 pub struct Bell(pub f64, pub f64, pub f64);
 
-impl Fn<(f64, ), f64> for Bell {
+impl Fn<(f64, )> for Bell {
+    type Output = f64;
+
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
         let Bell(frequency, attack, decay) = *self;
 
@@ -92,7 +104,9 @@ impl Fn<(f64, ), f64> for Bell {
 #[derive(Copy)]
 pub struct KarplusStrong<'a, F>(pub F, pub f64, pub f64, pub f64, pub f64);
 
-impl<'a, F> Fn<(f64, ), f64> for KarplusStrong<'a, F> where F: Fn<(f64, ), f64> {
+impl<'a, F> Fn<(f64, )> for KarplusStrong<'a, F> where F: Fn<(f64, ), Output=f64> {
+    type Output = f64;
+
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
         let KarplusStrong(ref wave, attack, decay, sharpness, sample_rate) = *self;
 

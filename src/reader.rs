@@ -1,5 +1,5 @@
 use std::cmp::max;
-use std::io::{BufferedReader, File, IoResult, IoError};
+use std::old_io::{ BufferedReader, File, IoResult, IoError };
 use std::num::FromPrimitive;
 
 // http://www.midi.org/techspecs/midimessages.php
@@ -8,7 +8,7 @@ use std::num::FromPrimitive;
 // http://dogsbodynet.com/fileformats/midi.html#RUNSTATUS
 
 #[repr(u8)]
-#[derive(FromPrimitive, PartialEq, Copy, Show)]
+#[derive(FromPrimitive, PartialEq, Copy, Debug)]
 pub enum MidiEventType {
     NoteOff = 0x8,
     NoteOn = 0x9,
@@ -21,7 +21,7 @@ pub enum MidiEventType {
 }
 
 #[repr(u8)]
-#[derive(FromPrimitive, PartialEq, Copy, Show)]
+#[derive(FromPrimitive, PartialEq, Copy, Debug)]
 pub enum MidiSystemEventType {
     SystemExclusive = 0x0,
     TimeCodeQuaterFrame = 0x1,
@@ -38,7 +38,7 @@ pub enum MidiSystemEventType {
 }
 
 #[repr(u8)]
-#[derive(FromPrimitive, PartialEq, Copy, Show)]
+#[derive(FromPrimitive, PartialEq, Copy, Debug)]
 pub enum MidiMetaEventType {
     SequenceNumber = 0x00,
     TextEvent = 0x01,
@@ -56,7 +56,7 @@ pub enum MidiMetaEventType {
     SequencerSpecificEvent = 0x7f
 }
 
-#[derive(Show)]
+#[derive(Debug)]
 pub struct MidiSong {
     pub max_time: usize,
     pub time_unit: isize,
@@ -65,7 +65,7 @@ pub struct MidiSong {
     pub bpm: f64
 }
 
-#[derive(Show)]
+#[derive(Debug)]
 pub struct MidiTrack {
     pub events: Vec<MidiEvent>,
     pub max_time: usize
@@ -81,7 +81,7 @@ impl MidiTrack {
     }
 }
 
-#[derive(Copy, Show)]
+#[derive(Copy, Debug)]
 pub struct MidiEvent {
     pub event_type: MidiEventType,
     pub system_event_type: Option<MidiSystemEventType>,
