@@ -8,7 +8,7 @@ Toy synthesiser library in Rust.
 
 * Not too difficult syntax for writing your own tones (see examples)
 * Basic filters (low-pass, high-pass, band-pass, band-reject, attack/decay envelope)
-* Basic waveforms (sine, square, triangle, sawtooth, tangent, basterdised Karplus-Strong)
+* Basic waveforms (sine, square, triangle, sawtooth, tangent, bastardised Karplus-Strong)
 * MIDI synthesis
 * PCM or WAV output
 
@@ -52,16 +52,16 @@ fn main() {
 }
 ```
 
-More examples are in `/example`.
+More examples are in `examples/`.
 
 ### Examples
 
 Check out `Cargo.toml` for the full example list.
 
-* `simple` generates simple tones in `/out`
-* `telecoms` generates phone tones in `/out`
-* `filters` generates examples of audio filtering in `/out`
-* `midi` synthesises a few MIDI files in `/out`
+* `simple` generates simple tones in `out/`
+* `telecoms` generates phone tones in `out/`
+* `filters` generates examples of audio filtering in `out/`
+* `midi` synthesises a few MIDI files in `out/`
 
 This generates WAV or PCM files which can be opened in Audacity. Example MIDI files are public domain as far as I can tell.
 
