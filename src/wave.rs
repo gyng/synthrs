@@ -104,7 +104,7 @@ impl Fn<(f64, )> for Bell {
 #[derive(Copy)]
 pub struct KarplusStrong<'a, F>(pub F, pub f64, pub f64, pub f64, pub f64);
 
-impl<'a, F> Fn<(f64, )> for KarplusStrong<'a, F> where F: Fn<(f64, ), Output=f64> {
+impl<'a, F> Fn<(f64, )> for KarplusStrong<'a, F> where F: Fn(f64) -> f64 {
     type Output = f64;
 
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {

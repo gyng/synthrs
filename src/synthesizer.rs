@@ -43,11 +43,11 @@ pub fn quantize_samples<T>(input: Vec<f64>) -> Vec<T> where T: FromPrimitive {
 }
 
 /// Invokes the waveform function `f` at time `t` to return the amplitude at that time.
-pub fn generate<F>(t: f64, f: &F) -> f64 where F: Fn<(f64, ), Output=f64> {
+pub fn generate<F>(t: f64, f: &F) -> f64 where F: Fn(f64) -> f64 {
     f.call((t, ))
 }
 
-pub fn make_samples<F>(length: f64, sample_rate: usize, waveform: F) -> Vec<f64> where F: Fn<(f64, ), Output=f64> {
+pub fn make_samples<F>(length: f64, sample_rate: usize, waveform: F) -> Vec<f64> where F: Fn(f64) -> f64 {
     let num_samples = (sample_rate as f64 * length).floor() as usize;
     let mut samples: Vec<f64> = Vec::with_capacity(num_samples);
 
