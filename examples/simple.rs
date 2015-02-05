@@ -1,9 +1,7 @@
-#![feature(rand, unboxed_closures)]
+#![feature(unboxed_closures)]
 
 extern crate synthrs;
 
-use std::rand;
-use std::rand::Rng;
 use std::num::Float;
 
 use synthrs::synthesizer::{ make_samples, quantize_samples, peak_normalize };
@@ -50,15 +48,6 @@ fn main() {
         )
     ).ok().expect("failed");
 
-    write_wav("out/whitenoise.wav", 44100,
-        quantize_samples::<i16>(
-            make_samples(1.0, 44100, |_t: f64| -> f64 {
-                let mut rng = rand::thread_rng();
-                (rng.gen::<f64>() - 0.5) * 2.0
-            })
-        )
-    ).ok().expect("failed");
-
     write_wav("out/rising.wav", 44100,
         quantize_samples::<i16>(
             make_samples(1.0, 44100, |t: f64| -> f64 {
@@ -92,14 +81,13 @@ fn main() {
     write_wav("out/racecar.wav", 44100,
         quantize_samples::<i16>(
             make_samples(15.0, 44100, |t: f64| -> f64 {
-                let mut rng = rand::thread_rng();
                 let mut out = 0.0;
                 if t < 14.0 { out += SawtoothWave(40.63 * (t / 2.0))(t); } // Engine
                 if t < 1.0 { out += SawtoothWave(30.0)(t) * 10.0; } // Engine start
                 if t < 14.0 && t.tan() > 0.0 { out += SquareWave(t.fract() * 130.8125)(t); } // Gear
                 if t < 14.0 && t.tan() < 0.0 { out += SquareWave(t.sin() * 261.625)(t); } // Gear
                 if t < 14.0 && t.tan() > 0.866 { out += SquareWave(t.fract() * 523.25)(t); } // Gear
-                if t > 14.0 { out += (rng.gen::<f64>() - 0.5) * 8.0 } // Tree
+                if t > 14.0 { out += TangentWave(100.0)(t) } // Tree
                 (out / 4.0).min(1.0)
             })
         )
