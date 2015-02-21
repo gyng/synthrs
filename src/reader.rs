@@ -209,7 +209,7 @@ impl<'a, T> MidiEventIterator<'a, T> where T: Reader+'a {
             },
 
             Some(MidiMetaEventType::TempoSetting) => {
-                assert_eq!(meta_data_size, 3us);
+                assert_eq!(meta_data_size, 3usize);
                 let tempo_byte1 = if self.is_running { self.limbo_byte } else { try_some!(self.reader.read_byte()) };
                 let tempo_byte2 = try_some!(self.reader.read_byte());
                 let tempo_byte3 = try_some!(self.reader.read_byte());
@@ -292,11 +292,11 @@ pub fn read_midi(filename: &str) -> Result<MidiSong, IoError> {
         panic!("unsupported time division format (SMPTE not supported)")
     }
 
-    for _ in range(0us, song.track_count) {
+    for _ in 0usize..song.track_count {
         song.tracks.push(try!(read_midi_track(&mut reader)));
     }
 
-    song.max_time = song.tracks.iter().fold(0us, |acc, track| {
+    song.max_time = song.tracks.iter().fold(0usize, |acc, track| {
         max(acc, track.max_time)
     });
 
@@ -346,7 +346,7 @@ fn read_midi_track<T>(reader: &mut T) -> Result<MidiTrack, IoError> where T: Rea
     }).collect::<Vec<_>>();
 
     track.max_time = if track.events.len() > 1 {
-        track.events[track.events.len() - 1us].time
+        track.events[track.events.len() - 1usize].time
     } else {
         0
     };

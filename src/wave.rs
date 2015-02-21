@@ -102,9 +102,9 @@ impl Fn<(f64, )> for Bell {
 /// `decay` in seconds
 /// `sharpness` 0-1 is decent
 #[derive(Copy)]
-pub struct KarplusStrong<'a, F>(pub F, pub f64, pub f64, pub f64, pub f64);
+pub struct KarplusStrong<F>(pub F, pub f64, pub f64, pub f64, pub f64);
 
-impl<'a, F> Fn<(f64, )> for KarplusStrong<'a, F> where F: Fn(f64) -> f64 {
+impl<F> Fn<(f64, )> for KarplusStrong<F> where F: Fn(f64) -> f64 {
     type Output = f64;
 
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
@@ -114,7 +114,7 @@ impl<'a, F> Fn<(f64, )> for KarplusStrong<'a, F> where F: Fn(f64) -> f64 {
 
         // Pretend we have a delay feature in synthrs, manually unroll delay loops
         // Any given sample at any given time will have "imaginary past" loops in it
-        range(0, 10us).fold(0.0, |acc, i| {
+        (0..10usize).fold(0.0, |acc, i| {
             acc + wave.call((t - tick * i as f64, ))
                 * envelope(t + tick * i as f64, attack, decay)
                 * sharpness.powf(i as f64)

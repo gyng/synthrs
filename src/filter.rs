@@ -93,7 +93,7 @@ pub fn convolve(filter: Vec<f64>, input: Vec<f64>) -> Vec<f64> {
 
     for i in range(-(filter.len() as isize / 2), input.len() as isize - 1) {
         output.push(0.0);
-        for j in range(0is, filter.len() as isize) {
+        for j in range(0isize, filter.len() as isize) {
             let input_idx = i + j;
             let output_idx = i + h_len;
             if input_idx < 0 || input_idx >= input.len() as isize { continue }
