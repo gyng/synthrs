@@ -1,4 +1,5 @@
-use std::old_io::{ File, IoResult, Truncate, Write };
+use std::old_io::{ File, IoResult, Truncate, Write, Writer };
+use std::old_path::Path;
 
 pub fn write_pcm(filename: &str, samples: Vec<i16>) -> IoResult<()> {
     let path = Path::new(filename);

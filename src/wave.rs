@@ -3,76 +3,119 @@ use std::num::Float;
 
 use filter::envelope;
 
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub struct SineWave(pub f64);
 
 impl Fn<(f64, )> for SineWave {
-    type Output = f64;
-
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
         let SineWave(frequency) = *self;
         Float::sin(t * frequency * 2.0 * PI)
     }
 }
+impl FnMut<(f64, )> for SineWave {
+    extern "rust-call" fn call_mut(&mut self, (t, ): (f64, )) -> f64 {
+        self.call((t, ))
+    }
+}
+impl FnOnce<(f64, )> for SineWave {
+    type Output = f64;
+    extern "rust-call" fn call_once(self, (t, ): (f64, )) -> f64 {
+        self.call((t, ))
+    }
+}
 
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub struct SquareWave(pub f64);
 
 impl Fn<(f64, )> for SquareWave {
-    type Output = f64;
-
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
         let SquareWave(frequency) = *self;
         let sin_wave = SineWave(frequency);
         if sin_wave(t).is_positive() { 1.0 } else { -1.0 }
     }
 }
+impl FnMut<(f64, )> for SquareWave {
+    extern "rust-call" fn call_mut(&mut self, (t, ): (f64, )) -> f64 {
+        self.call((t, ))
+    }
+}
+impl FnOnce<(f64, )> for SquareWave {
+    type Output = f64;
+    extern "rust-call" fn call_once(self, (t, ): (f64, )) -> f64 {
+        self.call((t, ))
+    }
+}
 
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub struct SawtoothWave(pub f64);
 
 impl Fn<(f64, )> for SawtoothWave {
-    type Output = f64;
-
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
         let SawtoothWave(frequency) = *self;
         let t_factor = t * frequency;
         t_factor - t_factor.floor() - 0.5
     }
 }
+impl FnMut<(f64, )> for SawtoothWave {
+    extern "rust-call" fn call_mut(&mut self, (t, ): (f64, )) -> f64 {
+        self.call((t, ))
+    }
+}
+impl FnOnce<(f64, )> for SawtoothWave {
+    type Output = f64;
+    extern "rust-call" fn call_once(self, (t, ): (f64, )) -> f64 {
+        self.call((t, ))
+    }
+}
 
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub struct TriangleWave(pub f64);
 
 impl Fn<(f64, )> for TriangleWave {
-    type Output = f64;
-
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
         let TriangleWave(frequency) = *self;
         let sawtooth_wave = SawtoothWave(frequency);
         (sawtooth_wave(t).abs() - 0.25) * 4.0
     }
 }
+impl FnMut<(f64, )> for TriangleWave {
+    extern "rust-call" fn call_mut(&mut self, (t, ): (f64, )) -> f64 {
+        self.call((t, ))
+    }
+}
+impl FnOnce<(f64, )> for TriangleWave {
+    type Output = f64;
+    extern "rust-call" fn call_once(self, (t, ): (f64, )) -> f64 {
+        self.call((t, ))
+    }
+}
 
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub struct TangentWave(pub f64);
 
 impl Fn<(f64, )> for TangentWave {
-    type Output = f64;
-
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
         let TangentWave(frequency) = *self;
         ((Float::tan(t * frequency * PI) - 0.5) / 4.0).max(-1.0).min(1.0)
     }
 }
+impl FnMut<(f64, )> for TangentWave {
+    extern "rust-call" fn call_mut(&mut self, (t, ): (f64, )) -> f64 {
+        self.call((t, ))
+    }
+}
+impl FnOnce<(f64, )> for TangentWave {
+    type Output = f64;
+    extern "rust-call" fn call_once(self, (t, ): (f64, )) -> f64 {
+        self.call((t, ))
+    }
+}
 
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 // http://computermusicresource.com/Simple.bell.tutorial.html
 pub struct Bell(pub f64, pub f64, pub f64);
 
 impl Fn<(f64, )> for Bell {
-    type Output = f64;
-
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
         let Bell(frequency, attack, decay) = *self;
 
@@ -94,6 +137,17 @@ impl Fn<(f64, )> for Bell {
         }) / 2.0
     }
 }
+impl FnMut<(f64, )> for Bell {
+    extern "rust-call" fn call_mut(&mut self, (t, ): (f64, )) -> f64 {
+        self.call((t, ))
+    }
+}
+impl FnOnce<(f64, )> for Bell {
+    type Output = f64;
+    extern "rust-call" fn call_once(self, (t, ): (f64, )) -> f64 {
+        self.call((t, ))
+    }
+}
 
 /// Bastardised and butchered generic Karplus-Strong synthesis.
 /// Try a Sawtooth, or even a Bell wave.
@@ -101,12 +155,10 @@ impl Fn<(f64, )> for Bell {
 /// `attack` in seconds
 /// `decay` in seconds
 /// `sharpness` 0-1 is decent
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub struct KarplusStrong<F>(pub F, pub f64, pub f64, pub f64, pub f64);
 
 impl<F> Fn<(f64, )> for KarplusStrong<F> where F: Fn(f64) -> f64 {
-    type Output = f64;
-
     extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
         let KarplusStrong(ref wave, attack, decay, sharpness, sample_rate) = *self;
 
@@ -119,5 +171,16 @@ impl<F> Fn<(f64, )> for KarplusStrong<F> where F: Fn(f64) -> f64 {
                 * envelope(t + tick * i as f64, attack, decay)
                 * sharpness.powf(i as f64)
         }) * envelope(t, attack, decay)
+    }
+}
+impl<F> FnMut<(f64, )> for KarplusStrong<F> where F: Fn(f64) -> f64 {
+    extern "rust-call" fn call_mut(&mut self, (t, ): (f64, )) -> f64 {
+        self.call((t, ))
+    }
+}
+impl<F> FnOnce<(f64, )> for KarplusStrong<F> where F: Fn(f64) -> f64 {
+    type Output = f64;
+    extern "rust-call" fn call_once(self, (t, ): (f64, )) -> f64 {
+        self.call((t, ))
     }
 }

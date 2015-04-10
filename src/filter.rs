@@ -12,7 +12,6 @@
 //!         the cutoff "blends", or how harsh a cutoff this is.
 
 use std::f64::consts::PI;
-use std::iter::range;
 use std::num::Float;
 
 /// Creates a low-pass filter. Frequencies below the cutoff are preserved when
@@ -21,11 +20,11 @@ pub fn lowpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
     let mut n = (4.0 / band).ceil() as usize;
     if n % 2 == 1 { n += 1; }
 
-    let sinc = |&: x: f64| -> f64 {
+    let sinc = |x: f64| -> f64 {
         (x * PI).sin() / (x * PI)
     };
 
-    let sinc_wave: Vec<f64> = range(0, n).map(|i| {
+    let sinc_wave: Vec<f64> = (0..n).map(|i| {
         sinc(2.0 * cutoff * (i as f64 - (n as f64 - 1.0) / 2.0))
     }).collect();
 
@@ -46,7 +45,7 @@ pub fn lowpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
 }
 
 pub fn blackman_window(size: usize) -> Vec<f64> {
-    range(0, size).map(|i| {
+    (0..size).map(|i| {
         0.42 - 0.5 * (2.0 * PI * i as f64 / (size as f64 - 1.0)).cos()
         + 0.08 * (4.0 * PI * i as f64 / (size as f64 - 1.0)).cos()
     }).collect()
@@ -91,9 +90,9 @@ pub fn convolve(filter: Vec<f64>, input: Vec<f64>) -> Vec<f64> {
     let mut output: Vec<f64> = Vec::new();
     let h_len = (filter.len() / 2) as isize;
 
-    for i in range(-(filter.len() as isize / 2), input.len() as isize - 1) {
+    for i in (-(filter.len() as isize / 2)..(input.len() as isize - 1)) {
         output.push(0.0);
-        for j in range(0isize, filter.len() as isize) {
+        for j in (0isize..filter.len() as isize) {
             let input_idx = i + j;
             let output_idx = i + h_len;
             if input_idx < 0 || input_idx >= input.len() as isize { continue }

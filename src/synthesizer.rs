@@ -78,13 +78,13 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
     let length = (60.0 * song.max_time as f64) / (song.bpm * song.time_unit as f64);
 
     let mut notes_on_for_ticks: Vec<Vec<(u8, u8, usize)>> = Vec::new();
-    for _ in range(0, song.max_time) {
+    for _ in (0..song.max_time) {
         let notes_on_for_tick: Vec<(u8, u8, usize)> = Vec::new();
         notes_on_for_ticks.push(notes_on_for_tick);
     }
 
     for track in song.tracks.iter() {
-        for i in range(0, track.events.len()) {
+        for i in (0..track.events.len()) {
             let event = track.events[i];
             if event.event_type == reader::MidiEventType::NoteOn {
                 let start_tick = event.time;
@@ -92,7 +92,7 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
                 let velocity = event.value2.unwrap();
 
                 let mut end_tick = song.max_time;
-                for j in range(i, track.events.len()) {
+                for j in (i..track.events.len()) {
                     let event_cursor = track.events[j];
 
                     // NoteOn with velocity 0 == NoteOff
@@ -103,14 +103,14 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
                     }
                 }
 
-                for tick in range(start_tick, end_tick) {
+                for tick in (start_tick..end_tick) {
                     notes_on_for_ticks[tick].push((note as u8, velocity as u8, start_tick));
                 }
             }
         }
     }
 
-    let midi_frequency_function = |&: t: f64| -> f64 {
+    let midi_frequency_function = |t: f64| -> f64 {
         let tick = (t * song.bpm * song.time_unit as f64 / 60.0) as usize;
         let mut out = 0.0;
 
@@ -123,6 +123,7 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
                 let start_t = start_tick as f64 * 60.0 / song.bpm as f64 / song.time_unit as f64;
                 let relative_t = t - start_t;
                 out += loudness * wave::SquareWave(frequency)(t) * filter::envelope(relative_t, attack, decay)
+
             }
         }
 
