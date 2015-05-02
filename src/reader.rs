@@ -1,7 +1,6 @@
 use std::cmp::max;
 use std::old_io::{ BufferedReader, File, Reader, IoResult, IoError };
 use std::old_path::Path;
-use std::num::FromPrimitive;
 
 // http://www.midi.org/techspecs/midimessages.php
 // http://www.ccarh.org/courses/253/handout/smf/

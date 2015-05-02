@@ -13,8 +13,9 @@
 //!
 //! See: `examples/simple.rs`
 
-use std::num::{ Float, from_f64, FromPrimitive };
 use std::mem::size_of;
+
+use num::Float;
 
 use filter;
 use music;
