@@ -12,7 +12,6 @@
 //!         the cutoff "blends", or how harsh a cutoff this is.
 
 use std::f64::consts::PI;
-use std::num::Float;
 
 /// Creates a low-pass filter. Frequencies below the cutoff are preserved when
 /// samples are convolved with this filter.

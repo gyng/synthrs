@@ -1,5 +1,3 @@
-use std::num::Float;
-
 /// Calculates the frequency (equal-tempered) given A4, the semitone and the octave.
 /// C4 = `note(440.0, 0u, 4u)`
 ///
@@ -18,7 +16,7 @@ use std::num::Float;
 /// 10 B
 pub fn note(a4: f64, semitone: usize, octave: usize) -> f64 {
     let semitones_from_a4 = octave as isize * 12 + semitone as isize - 9 - 48;
-    a4 * (semitones_from_a4 as f64 * 2.0.ln() / 12.0).exp()
+    a4 * (semitones_from_a4 as f64 * 2.0f64.ln() / 12.0).exp()
 }
 
 /// Calculates the frequency (equal-tempered) given A4 and the MIDI note value.
@@ -36,8 +34,8 @@ fn it_equal_tempers() {
     let a4 = 440.0;
     let d3 = 146.83;
     let fs6 = 1479.98;
-    assert!(Float::abs_sub(note(a4, 9, 4), a4) < threshold);
-    assert!(Float::abs_sub(note(a4, 0, 4), c4) < threshold);
-    assert!(Float::abs_sub(note(a4, 2, 3), d3) < threshold);
-    assert!(Float::abs_sub(note(a4, 6, 6), fs6) < threshold);
+    assert!(note(a4, 9, 4).abs_sub(a4) < threshold);
+    assert!(note(a4, 0, 4).abs_sub(c4) < threshold);
+    assert!(note(a4, 2, 3).abs_sub(d3) < threshold);
+    assert!(note(a4, 6, 6).abs_sub(fs6) < threshold);
 }

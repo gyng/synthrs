@@ -7,6 +7,9 @@ authors = [
     "stacey.ell@gmail.com"
 ]
 
+[dependencies]
+byteorder = "*"
+
 [lib]
 
 name = "synthrs"

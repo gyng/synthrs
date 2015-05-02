@@ -2,8 +2,6 @@
 
 extern crate synthrs;
 
-use std::num::Float;
-
 use synthrs::synthesizer::{ make_samples, quantize_samples, peak_normalize };
 use synthrs::wave::{ SineWave, SquareWave, SawtoothWave, TriangleWave, TangentWave, Bell, KarplusStrong };
 use synthrs::writer::{ write_pcm, write_wav };

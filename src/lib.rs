@@ -3,6 +3,8 @@
 
 // unused_features is here only for std_misc, which is used in some assert! macros.
 
+extern crate byteorder;
+
 pub mod filter;
 pub mod music;
 pub mod reader;
