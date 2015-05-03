@@ -20,10 +20,11 @@ pub fn note(a4: f64, semitone: usize, octave: usize) -> f64 {
 }
 
 /// Calculates the frequency (equal-tempered) given A4 and the MIDI note value.
-/// C4 = `note_midi(440.0, 72u)`
+/// C4 = `note_midi(440.0, 60u)`
+/// A4 = `note_midi(440.0, 69u)`
 pub fn note_midi(a4: f64, midi_note: usize) -> f64 {
-    let semitone = (midi_note - 24) % 12;
-    let octave = ((midi_note - 24) / 12) + 1;
+    let semitone = (midi_note + 2 - 24) % 12;
+    let octave = ((midi_note + 2 - 24) / 12) + 1;
     note(a4, semitone, octave)
 }
 
