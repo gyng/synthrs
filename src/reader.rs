@@ -1,9 +1,10 @@
 use std::cmp::max;
 use std::path::Path;
-use std::io::{ BufReader, Error, Result, Read, Seek, SeekFrom };
+use std::io::{ BufReader, Result, Read, Seek, SeekFrom };
 use std::fs::File;
 
-use byteorder::{ BigEndian, LittleEndian, ReadBytesExt, WriteBytesExt };
+use byteorder::{ BigEndian, ReadBytesExt };
+use num::FromPrimitive;
 
 // http://www.midi.org/techspecs/midimessages.php
 // http://www.ccarh.org/courses/253/handout/smf/
@@ -87,7 +88,6 @@ pub struct MidiEvent {
     pub system_event_type: Option<MidiSystemEventType>,
     pub meta_event_type: Option<MidiMetaEventType>,
     pub time: usize,
-    pub delta_time: usize,
     pub channel: u8,
     pub value1: usize,
     pub value2: Option<usize>
@@ -103,7 +103,19 @@ struct EventIterator<'a, T> where T: Read+Seek+'a {
     end_of_track: bool
 }
 
-enum DataLength { Single, Double }
+#[derive(Debug)]
+enum DataLength { Single, Double, System }
+
+// Similar to try! but this wraps the IoError return in an Option instead
+// This is used for the Iterator impl which has a signature of -> Option<Result<T>>
+// Standard try! macro returns a Result<T>, which is unsuited for usage in `fn next`
+// try! cannot be used inside a function which returns Option<Result<T, IoError>>
+macro_rules! try_some(
+    ($e:expr) => (match $e {
+        Ok(e) => e,
+        Err(e) => return Some(Err(e))
+    })
+);
 
 impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
     fn new(reader: &'a mut T) -> EventIterator<'a, T> {
@@ -121,7 +133,7 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
     fn read_data_event(&mut self, length: DataLength) -> Result<MidiEvent> {
         // If running status is true, implicitly use previous event's status
         //
-        // Normal:
+        // Normal double-byte event:
         //   [Byte 1] [Byte 2] [Byte 3]
         //    Status   Data 1   Data 2
         //
@@ -129,39 +141,191 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
         //   [Byte 1] [Byte 2]
         //    Data 1   Data 2
 
-        if self.is_running {
-            self.reader.seek(SeekFrom::Current(-1));
-        }
-
         let (value1, value2) = match length {
-            Single => (
+            DataLength::Single => (
                 try!(self.reader.read_u8()) as usize,
                 None
             ),
-            Double => (
+            DataLength::Double => (
                 try!(self.reader.read_u8()) as usize,
                 Some(try!(self.reader.read_u8()) as usize)
-            )
+            ),
+            DataLength::System => {
+                panic!("this should not have happened");
+            }
         };
 
         Ok(MidiEvent {
-            event_type: self.running_status.unwrap(),
+            event_type: self.running_status.expect("no running status"),
             system_event_type: None,
             meta_event_type: None,
             time: self.time,
-            delta_time: self.delta_time,
-            channel: self.running_channel.unwrap(),
+            channel: self.running_channel.expect("no running channel"),
             value1: value1,
             value2: value2
         })
     }
 
     /// Returns none if no system messages were handled
-    fn read_system_event(&mut self) -> Result<Option<MidiEvent>> {
-        let system_event_type: MidiSystemEventType = num::FromPrimitive::from_u8(self.running_channel.unwrap()).unwrap();
-        let meta_data_size = try!(read_variable_number(self.reader));
+    fn read_system_event(&mut self) -> Option<Result<MidiEvent>> {
+        let system_event_type: MidiSystemEventType = FromPrimitive::from_u8(self.running_channel.unwrap()).unwrap();
 
-        Ok(None)
+        match system_event_type {
+            MidiSystemEventType::SystemExclusive => {
+                let _ = self.read_sysex(); // discard sysex messages
+            },
+
+            MidiSystemEventType::EndOfSystemExclusive => {
+                // All EndOfSystemExclusive messages should be captured by SystemExclusive message handling
+                panic!("unexpected EndOfSystemExclusive MIDI message: unsupported, bad, or corrupt file?")
+            },
+
+            MidiSystemEventType::TuneRequest |
+            MidiSystemEventType::TimingClock |
+            MidiSystemEventType::TimeCodeQuaterFrame |
+            MidiSystemEventType::Start |
+            MidiSystemEventType::Continue |
+            MidiSystemEventType::Stop |
+            MidiSystemEventType::ActiveSensing => {
+                // Unhandled, these have no data bytes
+            },
+
+            MidiSystemEventType::SongPositionPointer |
+            MidiSystemEventType::SongSelect => {
+                // Unhandled, these have two data bytes
+                self.reader.seek(SeekFrom::Current(2)).ok();
+            },
+
+            MidiSystemEventType::SystemResetOrMeta => {
+                // These are typically meta messages
+                return self.read_meta_event(system_event_type)
+            }
+        }
+
+        None
+    }
+
+    fn read_meta_event(&mut self, system_event_type: MidiSystemEventType) -> Option<Result<MidiEvent>> {
+        let meta_message_type: Option<MidiMetaEventType> = FromPrimitive::from_u8(self.reader.read_u8().unwrap());
+        let meta_data_size = try_some!(read_variable_number(self.reader));
+
+        match meta_message_type {
+            Some(MidiMetaEventType::EndOfTrack) => {
+                self.end_of_track = true;
+            },
+
+            Some(MidiMetaEventType::TempoSetting) => {
+
+                assert_eq!(meta_data_size, 3usize);
+                let tempo_byte1 = self.reader.read_u8().ok().expect("failed to read tempo byte") as usize;
+                let tempo_byte2 = self.reader.read_u8().ok().expect("failed to read tempo byte") as usize;
+                let tempo_byte3 = self.reader.read_u8().ok().expect("failed to read tempo byte") as usize;
+                // Casting to usize below is done to kill shift overflow errors
+                // Somehow, it works...
+                let tempo = (tempo_byte1 << 16) as usize + (tempo_byte2 << 8) as usize + tempo_byte3;
+
+                return Some(Ok(MidiEvent {
+                    event_type: self.running_status.expect("failed to read running status"),
+                    system_event_type: Some(system_event_type),
+                    meta_event_type: meta_message_type,
+                    time: self.time,
+                    channel: self.running_channel.expect("failed to read running channel"),
+                    value1: tempo,
+                    value2: None
+                }))
+            },
+
+            _ => {
+                // Discard unhandled meta messages
+                self.reader.seek(SeekFrom::Current(meta_data_size as i64)).ok();
+            }
+        }
+
+        None
+    }
+
+    fn read_sysex(&mut self) -> Result<()> {
+        // Discard all sysex messages
+        // Variable data length: read until EndOfSystemExclusive byte
+        let mut next_byte = try!(self.reader.read_u8()) & 0b00001111;
+        let mut system_event_type: Option<MidiSystemEventType> = FromPrimitive::from_u8(next_byte);
+        while system_event_type != Some(MidiSystemEventType::EndOfSystemExclusive) {
+            next_byte = try!(self.reader.read_u8()) & 0b00001111;
+            system_event_type = FromPrimitive::from_u8(next_byte);
+        }
+
+        Ok(())
+    }
+
+    /// Returns (status, running channel)
+    fn read_status_byte(&mut self) -> Option<(MidiEventType, u8)> {
+        let byte = self.reader.read_u8().ok().expect("failed to read status byte");
+
+        if byte >= 0x80 {
+            let status: MidiEventType = FromPrimitive::from_u8(byte >> 4).expect("failed to convert status byte");
+            let channel = byte & 0b00001111;
+            Some((status, channel))
+        } else {
+            self.reader.seek(SeekFrom::Current(-1)).ok();
+            None
+        }
+    }
+
+    fn get_event_length(&self, event_type: MidiEventType) -> DataLength {
+        match event_type {
+            MidiEventType::NoteOff |
+            MidiEventType::NoteOn |
+            MidiEventType::PolyponicKeyPressure |
+            MidiEventType::ControlChange |
+            MidiEventType::PitchBendChange => {
+                DataLength::Double
+            },
+
+            MidiEventType::ProgramChange |
+            MidiEventType::ChannelPressure => {
+                DataLength::Single
+            },
+
+            MidiEventType::System => {
+                DataLength::System
+            }
+        }
+    }
+}
+
+impl<'a, T> Iterator for EventIterator<'a, T> where T: Read+Seek+'a {
+    type Item = Result<MidiEvent>;
+
+    fn next(&mut self) -> Option<Result<MidiEvent>> {
+        while !self.end_of_track {
+            let delta_time = try_some!(read_variable_number(self.reader));
+            self.time += delta_time;
+
+            if let Some((status, channel)) = self.read_status_byte() {
+                self.running_status = Some(status);
+                self.running_channel = Some(channel);
+                self.is_running = false;
+            } else {
+                self.is_running = true;
+            }
+
+            match self.get_event_length(self.running_status.expect("failed to unwrap running status")) {
+                length @ DataLength::Single | length @ DataLength::Double => {
+                    return Some(self.read_data_event(length))
+                },
+                DataLength::System => {
+                    if let Some(system_event) = self.read_system_event() {
+                        return Some(system_event)
+                    }
+                }
+            }
+
+            if self.is_running {
+                self.reader.seek(SeekFrom::Current(-1)).ok().expect("failed to seek data event");
+            }
+        }
+
+        None
     }
 }
 
@@ -173,6 +337,24 @@ pub fn read_midi(filename: &str) -> Result<MidiSong> {
 
     for _ in 0usize..song.track_count {
         song.tracks.push(try!(read_midi_track(&mut reader)));
+    }
+
+    song.max_time = song.tracks.iter().fold(0usize, |acc, track| {
+        max(acc, track.max_time)
+    });
+
+    // Guess song tempo (only take the first tempo change event)
+    // This means tempo changes in-song are not supported
+    for track in song.tracks.iter() {
+        for event in track.events.iter() {
+            match event.meta_event_type {
+                Some(MidiMetaEventType::TempoSetting) => {
+                    song.bpm = (60000000.0 / event.value1 as f64) as f64;
+                    break;
+                },
+                _ => {}
+            }
+        }
     }
 
     Ok(song)
@@ -199,8 +381,7 @@ fn read_midi_track<T>(reader: &mut T) -> Result<MidiTrack> where T: Read+Seek {
     let _track_chunk_size = try!(reader.read_u32::<BigEndian>());
     let mut track = MidiTrack::new();
 
-    let event_iterator = EventIterator::new(reader);
-    track.events = event_iterator.map(|event| {
+    track.events = EventIterator::new(reader).map(|event| {
         event.unwrap()
     }).collect::<Vec<_>>();
 
@@ -234,7 +415,7 @@ fn read_variable_number<T>(reader: &mut T) -> Result<usize> where T: Read+Seek {
 
 #[test]
 fn it_parses_a_midi_file() {
-    let song = read_midi("tests/assets/test.mid").ok().expect("Failed");
+    let song = read_midi("tests/assets/test.mid").ok().expect("failed");
 
     assert_eq!(song.tracks.len(), 2); // metadata track included
     let ref messages = song.tracks[1].events;
@@ -263,19 +444,19 @@ fn it_parses_a_midi_file() {
 
 #[test]
 fn it_parses_a_midi_file_with_multiple_tracks() {
-    let song = read_midi("tests/assets/multitrack.mid").unwrap();
+    let song = read_midi("tests/assets/multitrack.mid").ok().expect("failed");
     assert_eq!(song.tracks.len(), 3);
 }
 
 #[test]
 fn it_parses_a_midi_file_with_running_status() {
-    let song = read_midi("tests/assets/running_status.mid").unwrap();
+    let song = read_midi("tests/assets/running_status.mid").ok().expect("failed");
     assert_eq!(song.tracks.len(), 1);
     assert_eq!(song.max_time, 5640);
 }
 
 #[test]
 fn it_parses_the_bpm_of_a_midi_file() {
-    let song = read_midi("tests/assets/running_status.mid").unwrap();
+    let song = read_midi("tests/assets/running_status.mid").ok().expect("failed");
     assert_eq!(song.bpm as usize, 160);
 }

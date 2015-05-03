@@ -8,8 +8,10 @@ authors = [
 ]
 
 [dependencies]
+
 byteorder = "*"
 num = "*"
+num-macros = "*"
 
 [lib]
 
