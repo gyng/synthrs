@@ -16,6 +16,7 @@
 use std::mem::size_of;
 
 use num::Float;
+use num::traits::FromPrimitive;
 
 use filter;
 use music;
@@ -26,7 +27,7 @@ use wave;
 pub fn quantize<T>(input: f64) -> T where T: FromPrimitive {
     let quantization_levels = 2.0.powf(size_of::<T>() as f64 * 8.0) - 1.0;
     // Convert from [-1, 1] to take up full quantization range
-    from_f64::<T>(input * (quantization_levels / 2.0)).expect("failed to quantize to given type")
+    T::from_f64(input * (quantization_levels / 2.0)).expect("failed to quantize to given type")
 }
 
 /// Quantizes a `Vec<f64>` of samples into `Vec<T>`.
