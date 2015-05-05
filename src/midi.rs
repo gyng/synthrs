@@ -1,7 +1,7 @@
 use std::cmp::max;
-use std::path::Path;
-use std::io::{ BufReader, Result, Read, Seek, SeekFrom };
 use std::fs::File;
+use std::io::{ BufReader, Error, ErrorKind, Result, Read, Seek, SeekFrom };
+use std::path::Path;
 
 use byteorder::{ BigEndian, ReadBytesExt };
 use num::FromPrimitive;
@@ -110,10 +110,10 @@ enum DataLength { Single, Double, System }
 // This is used for the Iterator impl which has a signature of -> Option<Result<T>>
 // Standard try! macro returns a Result<T>, which is unsuited for usage in `fn next`
 // try! cannot be used inside a function which returns Option<Result<T, IoError>>
-macro_rules! try_some(
+macro_rules! try_opt(
     ($e:expr) => (match $e {
         Ok(e) => e,
-        Err(e) => return Some(Err(e))
+        Err(e) => return Some(Err(Error::new(ErrorKind::Other, format!("{}", e))))
     })
 );
 
@@ -156,11 +156,11 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
         };
 
         Ok(MidiEvent {
-            event_type: self.running_status.expect("no running status"),
+            event_type: self.running_status.unwrap(),
             system_event_type: None,
             meta_event_type: None,
             time: self.time,
-            channel: self.running_channel.expect("no running channel"),
+            channel: self.running_channel.unwrap(),
             value1: value1,
             value2: value2
         })
@@ -193,7 +193,7 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
             SystemEventType::SongPositionPointer |
             SystemEventType::SongSelect => {
                 // Unhandled, these have two data bytes
-                self.reader.seek(SeekFrom::Current(2)).ok();
+                try_opt!(self.reader.seek(SeekFrom::Current(2)));
             },
 
             SystemEventType::SystemResetOrMeta => {
@@ -207,7 +207,7 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
 
     fn read_meta_event(&mut self, system_event_type: SystemEventType) -> Option<Result<MidiEvent>> {
         let meta_message_type: Option<MetaEventType> = FromPrimitive::from_u8(self.reader.read_u8().unwrap());
-        let meta_data_size = try_some!(self.read_variable_number());
+        let meta_data_size = try_opt!(self.read_variable_number());
 
         match meta_message_type {
             Some(MetaEventType::EndOfTrack) => {
@@ -217,19 +217,19 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
             Some(MetaEventType::TempoSetting) => {
 
                 assert_eq!(meta_data_size, 3usize);
-                let tempo_byte1 = self.reader.read_u8().ok().expect("failed to read tempo byte") as usize;
-                let tempo_byte2 = self.reader.read_u8().ok().expect("failed to read tempo byte") as usize;
-                let tempo_byte3 = self.reader.read_u8().ok().expect("failed to read tempo byte") as usize;
+                let tempo_byte1 = try_opt!(self.reader.read_u8()) as usize;
+                let tempo_byte2 = try_opt!(self.reader.read_u8()) as usize;
+                let tempo_byte3 = try_opt!(self.reader.read_u8()) as usize;
                 // Casting to usize below is done to kill shift overflow errors
                 // Somehow, it works...
                 let tempo = (tempo_byte1 << 16) as usize + (tempo_byte2 << 8) as usize + tempo_byte3;
 
                 return Some(Ok(MidiEvent {
-                    event_type: self.running_status.expect("failed to read running status"),
+                    event_type: self.running_status.unwrap(),
                     system_event_type: Some(system_event_type),
                     meta_event_type: meta_message_type,
                     time: self.time,
-                    channel: self.running_channel.expect("failed to read running channel"),
+                    channel: self.running_channel.unwrap(),
                     value1: tempo,
                     value2: None
                 }))
@@ -237,7 +237,7 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
 
             _ => {
                 // Discard unhandled meta messages
-                self.reader.seek(SeekFrom::Current(meta_data_size as i64)).ok();
+                try_opt!(self.reader.seek(SeekFrom::Current(meta_data_size as i64)));
             }
         }
 
@@ -259,10 +259,10 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
 
     /// Returns (status, running channel)
     fn read_status_byte(&mut self) -> Option<(EventType, u8)> {
-        let byte = self.reader.read_u8().ok().expect("failed to read status byte");
+        let byte = self.reader.read_u8().unwrap();
 
         if byte >= 0x80 {
-            let status: EventType = FromPrimitive::from_u8(byte >> 4).expect("failed to convert status byte");
+            let status: EventType = FromPrimitive::from_u8(byte >> 4).unwrap();
             let channel = byte & 0b00001111;
             Some((status, channel))
         } else {
@@ -317,7 +317,7 @@ impl<'a, T> Iterator for EventIterator<'a, T> where T: Read+Seek+'a {
 
     fn next(&mut self) -> Option<Result<MidiEvent>> {
         while !self.end_of_track {
-            let delta_time = try_some!(self.read_variable_number());
+            let delta_time = try_opt!(self.read_variable_number());
             self.time += delta_time;
 
             if let Some((status, channel)) = self.read_status_byte() {
@@ -328,7 +328,7 @@ impl<'a, T> Iterator for EventIterator<'a, T> where T: Read+Seek+'a {
                 self.is_running = true;
             }
 
-            match self.get_event_length(self.running_status.expect("failed to unwrap running status")) {
+            match self.get_event_length(self.running_status.unwrap()) {
                 length @ DataLength::Single | length @ DataLength::Double => {
                     return Some(self.read_data_event(length))
                 },
@@ -340,7 +340,7 @@ impl<'a, T> Iterator for EventIterator<'a, T> where T: Read+Seek+'a {
             }
 
             if self.is_running {
-                self.reader.seek(SeekFrom::Current(-1)).ok().expect("failed to seek data event");
+                try_opt!(self.reader.seek(SeekFrom::Current(-1)));
             }
         }
 
@@ -350,7 +350,7 @@ impl<'a, T> Iterator for EventIterator<'a, T> where T: Read+Seek+'a {
 
 pub fn read_midi(filename: &str) -> Result<MidiSong> {
     let path = Path::new(filename);
-    let file = File::open(&path).unwrap();
+    let file = File::open(&path).ok().expect(&format!("failed to open file for reading {:?}", path));
     let mut reader = BufReader::new(file);
     let mut song = try!(read_midi_header(&mut reader));
 
