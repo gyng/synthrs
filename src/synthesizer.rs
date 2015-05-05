@@ -1,12 +1,12 @@
 //! The following code generates a 1s long, 16-bit, 440Hz sinewave at a 44100Hz sample rate.
 //! It then writes the generated samples into a 44100Hz WAV file at `out/sine.wav`.
 //!
-//! ```ignore
+//! ```
 //! use synthrs::wave::SineWave;
 //! use synthrs::writer::write_wav;
 //! use synthrs::synthesizer::{quantize_samples, make_samples};
 //!
-//! write_wav("out/sine.wav", 44100,
+//! write_wav("sine.wav", 44100,
 //!     quantize_samples::<i16>(make_samples(1.0, 44100, SineWave(440.0)))
 //! ).ok().expect("failed");
 //! ```
@@ -20,7 +20,7 @@ use num::traits::FromPrimitive;
 
 use filter;
 use music;
-use reader;
+use midi;
 use wave;
 
 /// Quantizes a `f64` sample into `T`.
@@ -76,7 +76,7 @@ pub fn peak_normalize(samples: Vec<f64>) -> Vec<f64> {
 // This is really awful, is there a more elegant way to do this?
 // TODO: Make the instrument a parameter (perhaps using an Instrument trait?)
 pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
-    let song = reader::read_midi(filename).unwrap();
+    let song = midi::read_midi(filename).unwrap();
     let length = (60.0 * song.max_time as f64) / (song.bpm * song.time_unit as f64);
 
     let mut notes_on_for_ticks: Vec<Vec<(u8, u8, usize)>> = Vec::new();
@@ -88,7 +88,7 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
     for track in song.tracks.iter() {
         for i in (0..track.events.len()) {
             let event = track.events[i];
-            if event.event_type == reader::MidiEventType::NoteOn {
+            if event.event_type == midi::EventType::NoteOn {
                 let start_tick = event.time;
                 let note = event.value1;
                 let velocity = event.value2.unwrap();
@@ -98,8 +98,8 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
                     let event_cursor = track.events[j];
 
                     // NoteOn with velocity 0 == NoteOff
-                    if (event_cursor.event_type == reader::MidiEventType::NoteOff && event_cursor.value1 == note) ||
-                       (event_cursor.event_type == reader::MidiEventType::NoteOn && event_cursor.value1 == note && event_cursor.value2.unwrap() == 0) {
+                    if (event_cursor.event_type == midi::EventType::NoteOff && event_cursor.value1 == note) ||
+                       (event_cursor.event_type == midi::EventType::NoteOn && event_cursor.value1 == note && event_cursor.value2.unwrap() == 0) {
                         end_tick = event_cursor.time;
                         break;
                     }

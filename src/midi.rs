@@ -12,7 +12,7 @@ use num::FromPrimitive;
 // http://dogsbodynet.com/fileformats/midi.html#RUNSTATUS
 
 #[derive(NumFromPrimitive, PartialEq, Clone, Copy, Debug)]
-pub enum MidiEventType {
+pub enum EventType {
     NoteOff = 0x8,
     NoteOn = 0x9,
     PolyponicKeyPressure = 0xa,
@@ -24,7 +24,7 @@ pub enum MidiEventType {
 }
 
 #[derive(NumFromPrimitive, PartialEq, Clone, Copy, Debug)]
-pub enum MidiSystemEventType {
+pub enum SystemEventType {
     SystemExclusive = 0x0,
     TimeCodeQuaterFrame = 0x1,
     SongPositionPointer = 0x2,
@@ -40,7 +40,7 @@ pub enum MidiSystemEventType {
 }
 
 #[derive(NumFromPrimitive, PartialEq, Clone, Copy, Debug)]
-pub enum MidiMetaEventType {
+pub enum MetaEventType {
     SequenceNumber = 0x00,
     TextEvent = 0x01,
     CopyrightNotice = 0x02,
@@ -84,9 +84,9 @@ impl MidiTrack {
 
 #[derive(Clone, Copy, Debug)]
 pub struct MidiEvent {
-    pub event_type: MidiEventType,
-    pub system_event_type: Option<MidiSystemEventType>,
-    pub meta_event_type: Option<MidiMetaEventType>,
+    pub event_type: EventType,
+    pub system_event_type: Option<SystemEventType>,
+    pub meta_event_type: Option<MetaEventType>,
     pub time: usize,
     pub channel: u8,
     pub value1: usize,
@@ -97,7 +97,7 @@ struct EventIterator<'a, T> where T: Read+Seek+'a {
     reader: &'a mut T,
     time: usize,
     delta_time: usize,
-    running_status: Option<MidiEventType>,
+    running_status: Option<EventType>,
     running_channel: Option<u8>,
     is_running: bool,
     end_of_track: bool
@@ -168,35 +168,35 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
 
     /// Returns none if no system messages were handled
     fn read_system_event(&mut self) -> Option<Result<MidiEvent>> {
-        let system_event_type: MidiSystemEventType = FromPrimitive::from_u8(self.running_channel.unwrap()).unwrap();
+        let system_event_type: SystemEventType = FromPrimitive::from_u8(self.running_channel.unwrap()).unwrap();
 
         match system_event_type {
-            MidiSystemEventType::SystemExclusive => {
+            SystemEventType::SystemExclusive => {
                 let _ = self.read_sysex(); // discard sysex messages
             },
 
-            MidiSystemEventType::EndOfSystemExclusive => {
+            SystemEventType::EndOfSystemExclusive => {
                 // All EndOfSystemExclusive messages should be captured by SystemExclusive message handling
                 panic!("unexpected EndOfSystemExclusive MIDI message: unsupported, bad, or corrupt file?")
             },
 
-            MidiSystemEventType::TuneRequest |
-            MidiSystemEventType::TimingClock |
-            MidiSystemEventType::TimeCodeQuaterFrame |
-            MidiSystemEventType::Start |
-            MidiSystemEventType::Continue |
-            MidiSystemEventType::Stop |
-            MidiSystemEventType::ActiveSensing => {
+            SystemEventType::TuneRequest |
+            SystemEventType::TimingClock |
+            SystemEventType::TimeCodeQuaterFrame |
+            SystemEventType::Start |
+            SystemEventType::Continue |
+            SystemEventType::Stop |
+            SystemEventType::ActiveSensing => {
                 // Unhandled, these have no data bytes
             },
 
-            MidiSystemEventType::SongPositionPointer |
-            MidiSystemEventType::SongSelect => {
+            SystemEventType::SongPositionPointer |
+            SystemEventType::SongSelect => {
                 // Unhandled, these have two data bytes
                 self.reader.seek(SeekFrom::Current(2)).ok();
             },
 
-            MidiSystemEventType::SystemResetOrMeta => {
+            SystemEventType::SystemResetOrMeta => {
                 // These are typically meta messages
                 return self.read_meta_event(system_event_type)
             }
@@ -205,16 +205,16 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
         None
     }
 
-    fn read_meta_event(&mut self, system_event_type: MidiSystemEventType) -> Option<Result<MidiEvent>> {
-        let meta_message_type: Option<MidiMetaEventType> = FromPrimitive::from_u8(self.reader.read_u8().unwrap());
-        let meta_data_size = try_some!(read_variable_number(self.reader));
+    fn read_meta_event(&mut self, system_event_type: SystemEventType) -> Option<Result<MidiEvent>> {
+        let meta_message_type: Option<MetaEventType> = FromPrimitive::from_u8(self.reader.read_u8().unwrap());
+        let meta_data_size = try_some!(self.read_variable_number());
 
         match meta_message_type {
-            Some(MidiMetaEventType::EndOfTrack) => {
+            Some(MetaEventType::EndOfTrack) => {
                 self.end_of_track = true;
             },
 
-            Some(MidiMetaEventType::TempoSetting) => {
+            Some(MetaEventType::TempoSetting) => {
 
                 assert_eq!(meta_data_size, 3usize);
                 let tempo_byte1 = self.reader.read_u8().ok().expect("failed to read tempo byte") as usize;
@@ -248,8 +248,8 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
         // Discard all sysex messages
         // Variable data length: read until EndOfSystemExclusive byte
         let mut next_byte = try!(self.reader.read_u8()) & 0b00001111;
-        let mut system_event_type: Option<MidiSystemEventType> = FromPrimitive::from_u8(next_byte);
-        while system_event_type != Some(MidiSystemEventType::EndOfSystemExclusive) {
+        let mut system_event_type: Option<SystemEventType> = FromPrimitive::from_u8(next_byte);
+        while system_event_type != Some(SystemEventType::EndOfSystemExclusive) {
             next_byte = try!(self.reader.read_u8()) & 0b00001111;
             system_event_type = FromPrimitive::from_u8(next_byte);
         }
@@ -258,11 +258,11 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
     }
 
     /// Returns (status, running channel)
-    fn read_status_byte(&mut self) -> Option<(MidiEventType, u8)> {
+    fn read_status_byte(&mut self) -> Option<(EventType, u8)> {
         let byte = self.reader.read_u8().ok().expect("failed to read status byte");
 
         if byte >= 0x80 {
-            let status: MidiEventType = FromPrimitive::from_u8(byte >> 4).expect("failed to convert status byte");
+            let status: EventType = FromPrimitive::from_u8(byte >> 4).expect("failed to convert status byte");
             let channel = byte & 0b00001111;
             Some((status, channel))
         } else {
@@ -271,22 +271,41 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
         }
     }
 
-    fn get_event_length(&self, event_type: MidiEventType) -> DataLength {
+    fn read_variable_number(&mut self) -> Result<usize> {
+        // http://en.wikipedia.org/wiki/Variable-length_quantity
+        // cont. bit---V
+        //             7[6 5 4 3 2 1 0]+-+
+        // more bytes: 1 b b b b b b b   | concat bits to form new number
+        //                               V
+        //                             7[6 5 4 3 2 1 0]
+        //              no more bytes: 0 b b b b b b b
+
+        let mut octet = try!(self.reader.read_u8());
+        let mut value = (octet & 0b01111111) as usize;
+        while octet >= 0b10000000 {
+            octet = try!(self.reader.read_u8());
+            value = (value << 7) as usize + (octet & 0b01111111) as usize;
+        }
+
+        Ok(value)
+    }
+
+    fn get_event_length(&self, event_type: EventType) -> DataLength {
         match event_type {
-            MidiEventType::NoteOff |
-            MidiEventType::NoteOn |
-            MidiEventType::PolyponicKeyPressure |
-            MidiEventType::ControlChange |
-            MidiEventType::PitchBendChange => {
+            EventType::NoteOff |
+            EventType::NoteOn |
+            EventType::PolyponicKeyPressure |
+            EventType::ControlChange |
+            EventType::PitchBendChange => {
                 DataLength::Double
             },
 
-            MidiEventType::ProgramChange |
-            MidiEventType::ChannelPressure => {
+            EventType::ProgramChange |
+            EventType::ChannelPressure => {
                 DataLength::Single
             },
 
-            MidiEventType::System => {
+            EventType::System => {
                 DataLength::System
             }
         }
@@ -298,7 +317,7 @@ impl<'a, T> Iterator for EventIterator<'a, T> where T: Read+Seek+'a {
 
     fn next(&mut self) -> Option<Result<MidiEvent>> {
         while !self.end_of_track {
-            let delta_time = try_some!(read_variable_number(self.reader));
+            let delta_time = try_some!(self.read_variable_number());
             self.time += delta_time;
 
             if let Some((status, channel)) = self.read_status_byte() {
@@ -348,7 +367,7 @@ pub fn read_midi(filename: &str) -> Result<MidiSong> {
     for track in song.tracks.iter() {
         for event in track.events.iter() {
             match event.meta_event_type {
-                Some(MidiMetaEventType::TempoSetting) => {
+                Some(MetaEventType::TempoSetting) => {
                     song.bpm = (60000000.0 / event.value1 as f64) as f64;
                     break;
                 },
@@ -394,25 +413,6 @@ fn read_midi_track<T>(reader: &mut T) -> Result<MidiTrack> where T: Read+Seek {
     Ok(track)
 }
 
-fn read_variable_number<T>(reader: &mut T) -> Result<usize> where T: Read+Seek {
-    // http://en.wikipedia.org/wiki/Variable-length_quantity
-    // cont. bit---V
-    //             7[6 5 4 3 2 1 0]+-+
-    // more bytes: 1 b b b b b b b   | concat bits to form new number
-    //                               V
-    //                             7[6 5 4 3 2 1 0]
-    //              no more bytes: 0 b b b b b b b
-
-    let mut octet = try!(reader.read_u8());
-    let mut value = (octet & 0b01111111) as usize;
-    while octet >= 0b10000000 {
-        octet = try!(reader.read_u8());
-        value = (value << 7) as usize + (octet & 0b01111111) as usize;
-    }
-
-    Ok(value)
-}
-
 #[test]
 fn it_parses_a_midi_file() {
     let song = read_midi("tests/assets/test.mid").ok().expect("failed");
@@ -421,21 +421,21 @@ fn it_parses_a_midi_file() {
     let ref messages = song.tracks[1].events;
 
     // ProgramChange
-    assert_eq!(messages[0].event_type, MidiEventType::ProgramChange);
+    assert_eq!(messages[0].event_type, EventType::ProgramChange);
     assert_eq!(messages[0].time, 0);
     assert_eq!(messages[0].channel, 0);
     assert_eq!(messages[0].value1, 0);
     assert_eq!(messages[0].value2, None);
 
     // NoteOn
-    assert_eq!(messages[1].event_type, MidiEventType::NoteOn);
+    assert_eq!(messages[1].event_type, EventType::NoteOn);
     assert_eq!(messages[1].time, 0);
     assert_eq!(messages[1].channel, 0);
     assert_eq!(messages[1].value1, 57);
     assert_eq!(messages[1].value2, Some(64));
 
     // NoteOff
-    assert_eq!(messages[2].event_type, MidiEventType::NoteOff);
+    assert_eq!(messages[2].event_type, EventType::NoteOff);
     assert_eq!(messages[2].time, 960);
     assert_eq!(messages[2].channel, 0);
     assert_eq!(messages[2].value1, 57);
