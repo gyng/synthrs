@@ -23,8 +23,8 @@ pub fn note(a4: f64, semitone: usize, octave: usize) -> f64 {
 /// C4 = `note_midi(440.0, 60u)`
 /// A4 = `note_midi(440.0, 69u)`
 pub fn note_midi(a4: f64, midi_note: usize) -> f64 {
-    let semitone = (midi_note + 2 - 24) % 12;
-    let octave = ((midi_note + 2 - 24) / 12) + 1;
+    let semitone = midi_note % 12;
+    let octave = (midi_note / 12) - 1;
     note(a4, semitone, octave)
 }
 
@@ -33,10 +33,26 @@ fn it_equal_tempers() {
     let threshold = 0.1;
     let c4 = 261.63;
     let a4 = 440.0;
+    let a3 = 220.0;
     let d3 = 146.83;
     let fs6 = 1479.98;
     assert!(note(a4, 9, 4).abs_sub(a4) < threshold);
+    assert!(note(a4, 9, 3).abs_sub(a3) < threshold);
     assert!(note(a4, 0, 4).abs_sub(c4) < threshold);
     assert!(note(a4, 2, 3).abs_sub(d3) < threshold);
     assert!(note(a4, 6, 6).abs_sub(fs6) < threshold);
+    assert!(note(a4, 9, 4).abs_sub(c4) > threshold);
+}
+
+#[test]
+fn it_gets_frequency_for_a_midi_note() {
+    let threshold = 0.1;
+    let a4 = 440.0;
+    let a4_note = 69;
+    let a3_note = 57;
+    let c4_note = 60;
+
+    assert!(note(a4, 9, 4).abs_sub(note_midi(a4, a4_note)) < threshold);
+    assert!(note(a4, 9, 3).abs_sub(note_midi(a4, a3_note)) < threshold);
+    assert!(note(a4, 9, 4).abs_sub(note_midi(a4, c4_note)) > threshold);
 }

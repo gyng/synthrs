@@ -215,7 +215,6 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
             },
 
             Some(MetaEventType::TempoSetting) => {
-
                 assert_eq!(meta_data_size, 3usize);
                 let tempo_byte1 = try_opt!(self.reader.read_u8()) as usize;
                 let tempo_byte2 = try_opt!(self.reader.read_u8()) as usize;
