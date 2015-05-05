@@ -35,7 +35,7 @@ pub fn write_wav(filename: &str, sample_rate: usize, samples: Vec<i16>) -> Resul
     let block_align = (channels * bit_depth / 8) as i16;
 
     try!(f.write_i32::<BigEndian>(0x52494646));                // ChunkID, RIFF
-    try!(f.write_i32::<LittleEndian>(chunk_size));                // ChunkSize
+    try!(f.write_i32::<LittleEndian>(chunk_size));             // ChunkSize
     try!(f.write_i32::<BigEndian>(0x57415645));                // Format, WAVE
 
     try!(f.write_i32::<BigEndian>(0x666d7420));                // Subchunk1ID, fmt
