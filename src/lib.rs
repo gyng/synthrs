@@ -1,4 +1,4 @@
-#![feature(core, custom_derive, plugin, unboxed_closures)]
+#![feature(collections, core, custom_derive, plugin, unboxed_closures)]
 #![plugin(num_macros)]
 #![allow(dead_code)]
 
@@ -11,3 +11,4 @@ pub mod music;
 pub mod synthesizer;
 pub mod wave;
 pub mod writer;
+
