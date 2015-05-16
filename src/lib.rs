@@ -1,4 +1,4 @@
-#![feature(collections, core, custom_derive, plugin, unboxed_closures)]
+#![feature(core, custom_derive, plugin, unboxed_closures)]
 #![plugin(num_macros)]
 #![allow(dead_code)]
 
