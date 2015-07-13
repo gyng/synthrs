@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/gyng/synthrs.svg)](https://travis-ci.org/gyng/synthrs)
 
-Toy synthesiser library in Rust.
+Toy synthesiser library in Rust. Requires Rust nightly for now (ie. does not compile on stable).
 
 ## Features
 
