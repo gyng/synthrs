@@ -1,4 +1,4 @@
-#![feature(collections, unboxed_closures)]
+#![feature(unboxed_closures, vec_push_all)]
 
 extern crate synthrs;
 
