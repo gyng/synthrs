@@ -93,6 +93,16 @@ pub struct MidiEvent {
     pub value2: Option<usize>
 }
 
+impl MidiEvent {
+    // NoteOn with velocity 0 == NoteOff
+    pub fn is_note_terminating(self) -> bool {
+        (self.event_type == EventType::NoteOff) ||
+        (self.event_type == EventType::NoteOn &&
+        !self.value2.is_none() &&
+        self.value2.unwrap() == 0)
+    }
+}
+
 struct EventIterator<'a, T> where T: Read+Seek+'a {
     reader: &'a mut T,
     time: usize,

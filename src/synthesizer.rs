@@ -97,9 +97,7 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
                 for j in (i..track.events.len()) {
                     let event_cursor = track.events[j];
 
-                    // NoteOn with velocity 0 == NoteOff
-                    if (event_cursor.event_type == midi::EventType::NoteOff && event_cursor.value1 == note) ||
-                       (event_cursor.event_type == midi::EventType::NoteOn && event_cursor.value1 == note && event_cursor.value2.unwrap() == 0) {
+                    if event_cursor.value1 == note && event_cursor.is_note_terminating() {
                         end_tick = event_cursor.time;
                         break;
                     }
