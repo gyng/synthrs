@@ -2,6 +2,7 @@ use std::cmp::max;
 use std::fs::File;
 use std::io::{ BufReader, Error, ErrorKind, Result, Read, Seek, SeekFrom };
 use std::path::Path;
+use std::vec;
 
 use byteorder::{ BigEndian, ReadBytesExt };
 use num::FromPrimitive;
@@ -57,7 +58,6 @@ pub enum MetaEventType {
     SequencerSpecificEvent = 0x7f
 }
 
-#[derive(Debug)]
 pub struct MidiSong {
     pub max_time: usize,
     pub time_unit: isize,
@@ -66,7 +66,6 @@ pub struct MidiSong {
     pub bpm: f64
 }
 
-#[derive(Debug)]
 pub struct MidiTrack {
     pub events: Vec<MidiEvent>,
     pub max_time: usize
@@ -126,6 +125,24 @@ macro_rules! try_opt(
         Err(e) => return Some(Err(Error::new(ErrorKind::Other, format!("{}", e))))
     })
 );
+
+impl IntoIterator for MidiSong {
+    type Item = MidiTrack;
+    type IntoIter = vec::IntoIter<MidiTrack>;
+
+    fn into_iter(self) -> vec::IntoIter<MidiTrack> {
+        IntoIterator::into_iter(self.tracks)
+    }
+}
+
+impl IntoIterator for MidiTrack {
+    type Item = MidiEvent;
+    type IntoIter = vec::IntoIter<MidiEvent>;
+
+    fn into_iter(self) -> vec::IntoIter<MidiEvent> {
+        IntoIterator::into_iter(self.events)
+    }
+}
 
 impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
     fn new(reader: &'a mut T) -> EventIterator<'a, T> {
@@ -357,9 +374,11 @@ impl<'a, T> Iterator for EventIterator<'a, T> where T: Read+Seek+'a {
     }
 }
 
-pub fn read_midi(filename: &str) -> Result<MidiSong> {
-    let path = Path::new(filename);
-    let file = File::open(&path).ok().expect(&format!("failed to open file for reading {:?}", path));
+pub fn read_midi<P: AsRef<Path>>(path: P) -> Result<MidiSong> {
+    let file = match File::open(path) {
+        Ok(f) => f,
+        Err(err) => return Err(err)
+    };
     let mut reader = BufReader::new(file);
     let mut song = try!(read_midi_header(&mut reader));
 
