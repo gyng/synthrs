@@ -13,6 +13,7 @@
 //!
 //! See: `examples/simple.rs`
 
+use std::collections::VecDeque;
 use std::mem::size_of;
 
 use num::Float;
@@ -71,6 +72,71 @@ pub fn peak_normalize(samples: Vec<f64>) -> Vec<f64> {
     samples.iter().map(|&sample| {
         sample / peak
     }).collect()
+}
+
+struct MidiNoteState {
+    pub start_tick: usize,
+    pub elapsed_time: f64,
+    pub midi_note: usize,
+    // pub instrument: I
+    // pub envelope: E
+}
+
+struct MidiSongState {
+    pub real_time: f64,
+    pub tick: usize,
+    pub tempo: usize,
+    pub ended: bool,
+    pub active_events: Vec<midi::MidiNoteState>
+}
+
+impl MidiSongState {
+    pub fn new() -> MidiSongState {
+        MidiSongState {
+            real_time: 0.0f64,
+            tick: 0,
+            bpm: song.bpm,
+            ended: false,
+            active_notes: Vec::new()
+        }
+    }
+
+    pub fn advance(&mut self, seconds: f64) {
+        // Drain event queue of events up to new time/tick
+        // Advance each note state
+        // Advance self, convert seconds to tick as MIDI notes are in ticks
+        unimplemented!()
+    }
+
+    // for now, MIDI note number
+    pub fn note_on(&mut self, note: usize) {
+        unimplemented!()
+    }
+
+    pub fn note_off(&mut self, note: usize) {
+        unimplemented!()
+    }
+
+    pub fn bpm(&mut self, new_bpm: usize) {
+        self.bpm = new_bpm;
+    }
+
+    pub fn get_active_notes(&self) -> Vec<MidiNoteState> {
+        unimplemented!()
+    }
+}
+
+pub fn make_samples_2(sample_rate: usize, filename: &str) -> () {
+    let song = midi::read_midi(filename).unwrap();
+    let state = MidiSongState::new();
+    // No instrument support here currently as we lose track information by flattening events
+    // TODO: Add instrument by track support to MIDI synthesis
+    let event_queue: VecDeque<midi::MidiEvent> = song.tracks.iter()
+                                                            .flat_map(|t| t.events.clone())
+                                                            .collect()
+                                                            .sort_by(|a, b| a.time < b.time);
+
+    // why
 }
 
 // This is really awful, is there a more elegant way to do this?
