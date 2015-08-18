@@ -85,17 +85,19 @@ struct MidiNoteState {
 struct MidiSongState {
     pub real_time: f64,
     pub tick: usize,
-    pub tempo: usize,
+    pub bpm: f64,
+    pub time_unit: isize,
     pub ended: bool,
-    pub active_events: Vec<midi::MidiNoteState>
+    pub active_notes: Vec<MidiNoteState>
 }
 
 impl MidiSongState {
-    pub fn new() -> MidiSongState {
+    pub fn new(song: &midi::MidiSong) -> MidiSongState {
         MidiSongState {
             real_time: 0.0f64,
             tick: 0,
             bpm: song.bpm,
+            time_unit: song.time_unit,
             ended: false,
             active_notes: Vec::new()
         }
@@ -117,26 +119,42 @@ impl MidiSongState {
         unimplemented!()
     }
 
-    pub fn bpm(&mut self, new_bpm: usize) {
+    pub fn bpm(&mut self, new_bpm: f64) {
         self.bpm = new_bpm;
     }
 
     pub fn get_active_notes(&self) -> Vec<MidiNoteState> {
         unimplemented!()
     }
+
+    fn ticks_to_seconds(&self, ticks: usize) -> f64 {
+        (60.0 * ticks as f64) / (self.bpm * self.time_unit as f64)
+    }
+
+    fn seconds_to_ticks(&self, seconds: f64) -> f64 {
+        unimplemented!()
+    }
 }
 
 pub fn make_samples_2(sample_rate: usize, filename: &str) -> () {
     let song = midi::read_midi(filename).unwrap();
-    let state = MidiSongState::new();
+    let state = MidiSongState::new(&song);
+
+    // Convert Vec<Vec<Event>> into a sorted VecDeque<Event>
+
     // No instrument support here currently as we lose track information by flattening events
     // TODO: Add instrument by track support to MIDI synthesis
-    let event_queue: VecDeque<midi::MidiEvent> = song.tracks.iter()
-                                                            .flat_map(|t| t.events.clone())
-                                                            .collect()
-                                                            .sort_by(|a, b| a.time < b.time);
+    let mut event_queue: Vec<midi::MidiEvent> = song.tracks.iter()
+            .flat_map(|t| t.events.clone())
+            .collect::<Vec<midi::MidiEvent>>();
 
-    // why
+    event_queue.sort_by(|a, b| a.time.cmp(&b.time));
+
+    // Convert into a VecDeque
+    let mut sorted = VecDeque::with_capacity(event_queue.len());
+    for event in event_queue {
+        sorted.push_back(event);
+    }
 }
 
 // This is really awful, is there a more elegant way to do this?
