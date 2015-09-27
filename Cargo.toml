@@ -10,6 +10,7 @@ authors = [
 [dependencies]
 
 byteorder = "*"
+nom = "*"
 num = "*"
 num-macros = "*"
 

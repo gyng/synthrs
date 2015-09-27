@@ -1,6 +1,9 @@
-#![feature(core, custom_derive, plugin, unboxed_closures)]
+#![feature(core, convert, custom_derive, plugin, unboxed_closures)]
 #![plugin(num_macros)]
 #![allow(dead_code)]
+
+#[macro_use]
+extern crate nom;
 
 extern crate byteorder;
 extern crate num;

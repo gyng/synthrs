@@ -1,8 +1,14 @@
 use std::cmp::max;
 use std::fs::File;
 use std::io::{ BufReader, Error, ErrorKind, Result, Read, Seek, SeekFrom };
+use std::io::ErrorKind::Other;
 use std::path::Path;
 use std::vec;
+
+use nom::{HexDisplay,Needed,IResult,FileProducer,be_u16,be_u32,be_u64,be_f32};
+use nom::{Consumer,ConsumerState};
+use nom::IResult::*;
+use nom::Err::*;
 
 use byteorder::{ BigEndian, ReadBytesExt };
 use num::FromPrimitive;
@@ -60,7 +66,7 @@ pub enum MetaEventType {
 
 pub struct MidiSong {
     pub max_time: usize,
-    pub time_unit: isize,
+    pub time_unit: isize, // isize as MIDI spec uses -1 for some weird division
     pub tracks: Vec<MidiTrack>,
     pub track_count: usize,
     pub bpm: f64
@@ -375,12 +381,29 @@ impl<'a, T> Iterator for EventIterator<'a, T> where T: Read+Seek+'a {
 }
 
 pub fn read_midi<P: AsRef<Path>>(path: P) -> Result<MidiSong> {
-    let file = match File::open(path) {
+    let mut file = match File::open(path) {
         Ok(f) => f,
         Err(err) => return Err(err)
     };
+
+    // Temp reader, in middle of converting to nom; cursor changes important for reading tracks
     let mut reader = BufReader::new(file);
-    let mut song = try!(read_midi_header(&mut reader));
+    let mut midi_raw: Vec<u8> = Vec::new();
+    reader.read_to_end(&mut midi_raw);
+    let mut song: MidiSong = match midiheader(midi_raw.as_mut_slice()) {
+        Done(input, output) => output,
+        Error(err) => return Err(Error::new(Other, format!("{:?}", err))),
+        Incomplete(_) => {
+            println!("incomplete");
+            panic!("LOL")
+        }
+    };
+
+    reader.seek(SeekFrom::Start(0));
+
+    // TODO: Migrate away from manual reader and use nom's producer
+    // let mut reader = BufReader::new(file);
+    let _song = try!(read_midi_header(&mut reader));
 
     for _ in 0usize..song.track_count {
         song.tracks.push(try!(read_midi_track(&mut reader)));
@@ -443,7 +466,10 @@ fn read_midi_track<T>(reader: &mut T) -> Result<MidiTrack> where T: Read+Seek {
 
 #[test]
 fn it_parses_a_midi_file() {
-    let song = read_midi("tests/assets/test.mid").ok().expect("failed");
+    let song = match read_midi("tests/assets/test.mid") {
+        Ok(song) => song,
+        Err(err) => { println!("{:?}", err); panic!("failed") }
+    };
 
     assert_eq!(song.tracks.len(), 2); // metadata track included
     let ref messages = song.tracks[1].events;
@@ -472,19 +498,51 @@ fn it_parses_a_midi_file() {
 
 #[test]
 fn it_parses_a_midi_file_with_multiple_tracks() {
-    let song = read_midi("tests/assets/multitrack.mid").ok().expect("failed");
+    let song = match read_midi("tests/assets/multitrack.mid") {
+        Ok(song) => song,
+        Err(err) => { println!("{:?}", err); panic!("failed") }
+    };
+
     assert_eq!(song.tracks.len(), 3);
 }
 
 #[test]
 fn it_parses_a_midi_file_with_running_status() {
-    let song = read_midi("tests/assets/running_status.mid").ok().expect("failed");
+    let song = match read_midi("tests/assets/running_status.mid") {
+        Ok(song) => song,
+        Err(err) => { println!("{:?}", err); panic!("failed") }
+    };
+
     assert_eq!(song.tracks.len(), 1);
     assert_eq!(song.max_time, 5640);
 }
 
 #[test]
 fn it_parses_the_bpm_of_a_midi_file() {
-    let song = read_midi("tests/assets/running_status.mid").ok().expect("failed");
+    let song = match read_midi("tests/assets/running_status.mid") {
+        Ok(song) => song,
+        Err(err) => { println!("{:?}", err); panic!("failed") }
+    };
+
     assert_eq!(song.bpm as usize, 160);
 }
+
+named!(midiheader<&[u8], MidiSong>,
+    chain!(
+        // tag!("MThd") ~
+        take!(2) ~
+        take!(6) ~
+        file_format: be_u16 ~
+        track_count: be_u16 ~
+        time_division: be_u16,
+        || {
+            MidiSong {
+                max_time: 0,
+                time_unit: time_division as isize,
+                tracks: Vec::new(),
+                track_count: track_count as usize,
+                bpm: 120.0
+            }
+        }
+    )
+);
