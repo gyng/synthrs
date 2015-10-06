@@ -527,6 +527,67 @@ fn it_parses_the_bpm_of_a_midi_file() {
     assert_eq!(song.bpm as usize, 160);
 }
 
+#[test]
+fn it_parses_a_variable_number() {
+    let empty_input = vec![];
+    let single_byte = vec![0b01010101u8];
+    let double_byte = vec![0b10000000u8, 0b01111111, 0b11111111];
+    let double_byte_incomplete = vec![0b10000000u8];
+
+    match nom_read_variable_number(&empty_input) {
+        Incomplete(needed) => assert_eq!(needed, Needed::Size(1)),
+        _ => panic!("empty byte failed")
+    }
+
+    match nom_read_variable_number(&single_byte) {
+        Done(rest, value) => {
+            assert_eq!(rest.len(), 0);
+            assert_eq!(value, 85);
+        },
+        _ => panic!("single byte failed")
+    };
+
+    match nom_read_variable_number(&double_byte) {
+        Done(rest, value) => {
+            assert_eq!(rest.len(), 1);
+            assert_eq!(value, 127);
+        },
+        _ => panic!("double byte failed")
+    };
+
+    match nom_read_variable_number(&double_byte_incomplete) {
+        Incomplete(needed) => assert_eq!(needed, Needed::Size(1)),
+        _ => panic!("double byte incomplete failed")
+    }
+}
+
+fn nom_read_variable_number(input: &[u8]) -> IResult<&[u8], usize> {
+    // http://en.wikipedia.org/wiki/Variable-length_quantity
+    // cont. bit---V
+    //             7[6 5 4 3 2 1 0]+-+
+    // more bytes: 1 b b b b b b b   | concat bits to form new number
+    //                               V
+    //                             7[6 5 4 3 2 1 0]
+    //              no more bytes: 0 b b b b b b b
+
+    if input.len() < 1 {
+        IResult::Incomplete(Needed::Size(1))
+    } else {
+        let (mut octet, mut rest) = (input[0], &input[1..]);
+        let mut value = (octet & 0b01111111) as usize;
+        while octet >= 0b10000000 {
+            if rest.len() == 0 {
+                return IResult::Incomplete(Needed::Size(1))
+            }
+            octet = rest[0];
+            rest = &rest[1..];
+            value = (value << 7) as usize + (octet & 0b01111111) as usize;
+        }
+
+        IResult::Done(rest, value)
+    }
+}
+
 named!(midiheader<&[u8], MidiSong>,
     chain!(
         // tag!("MThd") ~
