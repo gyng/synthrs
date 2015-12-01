@@ -6,10 +6,7 @@ use byteorder::{ BigEndian, LittleEndian, WriteBytesExt };
 
 pub fn write_pcm(filename: &str, samples: Vec<i16>) -> Result<()> {
     let path = Path::new(filename);
-    let mut f = match OpenOptions::new().write(true).truncate(true).open(&path) {
-        Ok(f) => f,
-        Err(e) => panic!("File error: {}", e)
-    };
+    let mut f = try!(OpenOptions::new().write(true).truncate(true).create(true).open(&path));
 
     for &sample in samples.iter() {
         try!(f.write_i16::<LittleEndian>(sample));
@@ -21,10 +18,7 @@ pub fn write_pcm(filename: &str, samples: Vec<i16>) -> Result<()> {
 // See: https://ccrma.stanford.edu/courses/422/projects/WaveFormat/
 pub fn write_wav(filename: &str, sample_rate: usize, samples: Vec<i16>) -> Result<()> {
     let path = Path::new(filename);
-    let mut f = match OpenOptions::new().write(true).truncate(true).open(&path) {
-        Ok(f) => f,
-        Err(e) => panic!("File error: {}", e)
-    };
+    let mut f = try!(OpenOptions::new().write(true).truncate(true).create(true).open(&path));
 
     // Some WAV header fields
     let channels = 1;
