@@ -5,57 +5,114 @@ use std::path::Path;
 use std::vec;
 
 use byteorder::{ BigEndian, ReadBytesExt };
-use num::FromPrimitive;
 
 // http://www.midi.org/techspecs/midimessages.php
 // http://www.ccarh.org/courses/253/handout/smf/
 // http://www.ccarh.org/courses/253-2008/files/midifiles-20080227-2up.pdf
 // http://dogsbodynet.com/fileformats/midi.html#RUNSTATUS
 
-#[derive(NumFromPrimitive, PartialEq, Clone, Copy, Debug)]
+#[derive(PartialEq, Clone, Copy, Debug)]
 pub enum EventType {
-    NoteOff = 0x8,
-    NoteOn = 0x9,
-    PolyponicKeyPressure = 0xa,
-    ControlChange = 0xb,
-    ProgramChange = 0xc,
-    ChannelPressure = 0xd,
-    PitchBendChange = 0xe,
-    System = 0xf
+    NoteOff,
+    NoteOn,
+    PolyponicKeyPressure,
+    ControlChange,
+    ProgramChange,
+    ChannelPressure,
+    PitchBendChange,
+    System
 }
 
-#[derive(NumFromPrimitive, PartialEq, Clone, Copy, Debug)]
+impl EventType {
+    fn from_u8(n: u8) -> Option<EventType> {
+        match n {
+            0x8 => Some(EventType::NoteOff),
+            0x9 => Some(EventType::NoteOn),
+            0xa => Some(EventType::PolyponicKeyPressure),
+            0xb => Some(EventType::ControlChange),
+            0xc => Some(EventType::ProgramChange),
+            0xd => Some(EventType::ChannelPressure),
+            0xe => Some(EventType::PitchBendChange),
+            0xf => Some(EventType::System),
+            _ => None
+        }
+    }
+}
+
+#[derive(PartialEq, Clone, Copy, Debug)]
 pub enum SystemEventType {
-    SystemExclusive = 0x0,
-    TimeCodeQuaterFrame = 0x1,
-    SongPositionPointer = 0x2,
-    SongSelect = 0x3,
-    TuneRequest = 0x6,
-    EndOfSystemExclusive = 0x7,
-    TimingClock = 0x8,
-    Start = 0xa,
-    Continue = 0xb,
-    Stop = 0xc,
-    ActiveSensing = 0xe,
-    SystemResetOrMeta = 0xf
+    SystemExclusive,
+    TimeCodeQuaterFrame,
+    SongPositionPointer,
+    SongSelect,
+    TuneRequest,
+    EndOfSystemExclusive,
+    TimingClock,
+    Start,
+    Continue,
+    Stop,
+    ActiveSensing,
+    SystemResetOrMeta
 }
 
-#[derive(NumFromPrimitive, PartialEq, Clone, Copy, Debug)]
+impl SystemEventType {
+    fn from_u8(n: u8) -> Option<SystemEventType> {
+        match n {
+            0x0 => Some(SystemEventType::SystemExclusive),
+            0x1 => Some(SystemEventType::TimeCodeQuaterFrame),
+            0x2 => Some(SystemEventType::SongPositionPointer),
+            0x3 => Some(SystemEventType::SongSelect),
+            0x6 => Some(SystemEventType::TuneRequest),
+            0x7 => Some(SystemEventType::EndOfSystemExclusive),
+            0x8 => Some(SystemEventType::TimingClock),
+            0xa => Some(SystemEventType::Start),
+            0xb => Some(SystemEventType::Continue),
+            0xc => Some(SystemEventType::Stop),
+            0xe => Some(SystemEventType::ActiveSensing),
+            0xf => Some(SystemEventType::SystemResetOrMeta),
+            _ => None
+        }
+    }
+}
+
+#[derive(PartialEq, Clone, Copy, Debug)]
 pub enum MetaEventType {
-    SequenceNumber = 0x00,
-    TextEvent = 0x01,
-    CopyrightNotice = 0x02,
-    SequenceOrTrackName = 0x03,
-    InstrumentName = 0x04,
-    LyricText = 0x05,
-    MarkerText = 0x06,
-    CuePoint = 0x07,
-    MidiChannelPrefixAssignment = 0x20,
-    EndOfTrack = 0x2f,
-    TempoSetting = 0x51,
-    SmpteOffset = 0x54,
-    TimeSignature = 0x58,
-    SequencerSpecificEvent = 0x7f
+    SequenceNumber,
+    TextEvent,
+    CopyrightNotice,
+    SequenceOrTrackName,
+    InstrumentName,
+    LyricText,
+    MarkerText,
+    CuePoint,
+    MidiChannelPrefixAssignment,
+    EndOfTrack,
+    TempoSetting,
+    SmpteOffset,
+    TimeSignature,
+    SequencerSpecificEvent
+}
+
+impl MetaEventType {
+    fn from_u8(n: u8) -> Option<MetaEventType> {
+        match n {
+           0x00 => Some(MetaEventType::SequenceNumber),
+           0x01 => Some(MetaEventType::TextEvent),
+           0x02 => Some(MetaEventType::CopyrightNotice),
+           0x03 => Some(MetaEventType::SequenceOrTrackName),
+           0x04 => Some(MetaEventType::InstrumentName),
+           0x05 => Some(MetaEventType::LyricText),
+           0x06 => Some(MetaEventType::MarkerText),
+           0x07 => Some(MetaEventType::CuePoint),
+           0x20 => Some(MetaEventType::MidiChannelPrefixAssignment),
+           0x2f => Some(MetaEventType::EndOfTrack),
+           0x51 => Some(MetaEventType::TempoSetting),
+           0x54 => Some(MetaEventType::SmpteOffset),
+           0x58 => Some(MetaEventType::TimeSignature),
+           0x7f => Some(MetaEventType::SequencerSpecificEvent),
+            _ => None
+        }
+    }
 }
 
 pub struct MidiSong {
@@ -195,7 +252,7 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
 
     /// Returns none if no system messages were handled
     fn read_system_event(&mut self) -> Option<Result<MidiEvent>> {
-        let system_event_type: SystemEventType = FromPrimitive::from_u8(self.running_channel.unwrap()).unwrap();
+        let system_event_type = SystemEventType::from_u8(self.running_channel.unwrap()).unwrap();
 
         match system_event_type {
             SystemEventType::SystemExclusive => {
@@ -233,7 +290,7 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
     }
 
     fn read_meta_event(&mut self, system_event_type: SystemEventType) -> Option<Result<MidiEvent>> {
-        let meta_message_type: Option<MetaEventType> = FromPrimitive::from_u8(self.reader.read_u8().unwrap());
+        let meta_message_type = MetaEventType::from_u8(self.reader.read_u8().unwrap());
         let meta_data_size = try_opt!(self.read_variable_number());
 
         match meta_message_type {
@@ -274,10 +331,10 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
         // Discard all sysex messages
         // Variable data length: read until EndOfSystemExclusive byte
         let mut next_byte = try!(self.reader.read_u8()) & 0b00001111;
-        let mut system_event_type: Option<SystemEventType> = FromPrimitive::from_u8(next_byte);
+        let mut system_event_type = SystemEventType::from_u8(next_byte);
         while system_event_type != Some(SystemEventType::EndOfSystemExclusive) {
             next_byte = try!(self.reader.read_u8()) & 0b00001111;
-            system_event_type = FromPrimitive::from_u8(next_byte);
+            system_event_type = SystemEventType::from_u8(next_byte);
         }
 
         Ok(())
@@ -288,7 +345,7 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
         let byte = self.reader.read_u8().unwrap();
 
         if byte >= 0x80 {
-            let status: EventType = FromPrimitive::from_u8(byte >> 4).unwrap();
+            let status = EventType::from_u8(byte >> 4).unwrap();
             let channel = byte & 0b00001111;
             Some((status, channel))
         } else {

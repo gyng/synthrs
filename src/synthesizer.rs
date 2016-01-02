@@ -80,13 +80,13 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
     let length = (60.0 * song.max_time as f64) / (song.bpm * song.time_unit as f64);
 
     let mut notes_on_for_ticks: Vec<Vec<(u8, u8, usize)>> = Vec::new();
-    for _ in (0..song.max_time) {
+    for _ in 0..song.max_time {
         let notes_on_for_tick: Vec<(u8, u8, usize)> = Vec::new();
         notes_on_for_ticks.push(notes_on_for_tick);
     }
 
     for track in song.tracks.iter() {
-        for i in (0..track.events.len()) {
+        for i in 0..track.events.len() {
             let event = track.events[i];
             if event.event_type == midi::EventType::NoteOn {
                 let start_tick = event.time;
@@ -94,7 +94,7 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
                 let velocity = event.value2.unwrap();
 
                 let mut end_tick = song.max_time;
-                for j in (i..track.events.len()) {
+                for j in i..track.events.len() {
                     let event_cursor = track.events[j];
 
                     if event_cursor.value1 == note && event_cursor.is_note_terminating() {
@@ -103,7 +103,7 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
                     }
                 }
 
-                for tick in (start_tick..end_tick) {
+                for tick in start_tick..end_tick {
                     notes_on_for_ticks[tick].push((note as u8, velocity as u8, start_tick));
                 }
             }

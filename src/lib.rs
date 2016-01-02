@@ -1,5 +1,4 @@
-#![feature(core, custom_derive, plugin, unboxed_closures)]
-#![plugin(num_macros)]
+#![feature(fn_traits, unboxed_closures)]
 #![allow(dead_code)]
 
 extern crate byteorder;

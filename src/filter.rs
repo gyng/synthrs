@@ -89,9 +89,9 @@ pub fn convolve(filter: Vec<f64>, input: Vec<f64>) -> Vec<f64> {
     let mut output: Vec<f64> = Vec::new();
     let h_len = (filter.len() / 2) as isize;
 
-    for i in (-(filter.len() as isize / 2)..(input.len() as isize - 1)) {
+    for i in -(filter.len() as isize / 2)..(input.len() as isize - 1) {
         output.push(0.0);
-        for j in (0isize..filter.len() as isize) {
+        for j in 0isize..filter.len() as isize {
             let input_idx = i + j;
             let output_idx = i + h_len;
             if input_idx < 0 || input_idx >= input.len() as isize { continue }
