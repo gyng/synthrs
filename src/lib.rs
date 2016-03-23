@@ -3,6 +3,7 @@
 
 extern crate byteorder;
 extern crate num;
+extern crate rand;
 
 pub mod filter;
 pub mod midi;

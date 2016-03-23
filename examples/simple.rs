@@ -3,7 +3,7 @@
 extern crate synthrs;
 
 use synthrs::synthesizer::{ make_samples, quantize_samples, peak_normalize };
-use synthrs::wave::{ SineWave, SquareWave, SawtoothWave, TriangleWave, TangentWave, Bell, KarplusStrong };
+use synthrs::wave::{ SineWave, SquareWave, SawtoothWave, TriangleWave, TangentWave, Bell, KarplusStrong, Noise };
 use synthrs::writer::{ write_pcm, write_wav };
 
 fn main() {
@@ -35,6 +35,10 @@ fn main() {
 
     write_wav("out/tangent.wav", 44100,
         quantize_samples::<i16>(make_samples(1.0, 44100, TangentWave(440.0)))
+    ).ok().expect("failed");
+
+    write_wav("out/noise.wav", 44100,
+        quantize_samples::<i16>(make_samples(1.0, 44100, Noise))
     ).ok().expect("failed");
 
     // Custom function for tone generation, t is in seconds

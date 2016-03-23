@@ -11,6 +11,7 @@ authors = [
 
 byteorder = "*"
 num = "*"
+rand = "*"
 
 [lib]
 

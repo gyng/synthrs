@@ -1,5 +1,8 @@
 use std::f64::consts::PI;
 
+use rand;
+use rand::Rng;
+
 use filter::envelope;
 
 #[derive(Clone, Copy)]
@@ -178,6 +181,26 @@ impl<F> FnMut<(f64, )> for KarplusStrong<F> where F: Fn(f64) -> f64 {
     }
 }
 impl<F> FnOnce<(f64, )> for KarplusStrong<F> where F: Fn(f64) -> f64 {
+    type Output = f64;
+    extern "rust-call" fn call_once(self, (t, ): (f64, )) -> f64 {
+        self.call((t, ))
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct Noise;
+
+impl Fn<(f64, )> for Noise {
+    extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
+        rand::thread_rng().next_f64()
+    }
+}
+impl FnMut<(f64, )> for Noise {
+    extern "rust-call" fn call_mut(&mut self, (t, ): (f64, )) -> f64 {
+        self.call((t, ))
+    }
+}
+impl FnOnce<(f64, )> for Noise {
     type Output = f64;
     extern "rust-call" fn call_once(self, (t, ): (f64, )) -> f64 {
         self.call((t, ))
