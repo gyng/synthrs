@@ -65,7 +65,7 @@ pub fn make_samples<F>(length: f64, sample_rate: usize, waveform: F) -> Vec<f64>
 /// `Vec<f64>` samples are within the range [-1.0, 1.0]
 pub fn peak_normalize(samples: Vec<f64>) -> Vec<f64> {
     let peak = samples.iter().fold(0.0f64, |acc, &sample| {
-        acc.max(sample)
+        acc.max(sample).max(-sample)
     });
 
     samples.iter().map(|&sample| {
