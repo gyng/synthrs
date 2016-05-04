@@ -191,7 +191,7 @@ impl<F> FnOnce<(f64, )> for KarplusStrong<F> where F: Fn(f64) -> f64 {
 pub struct Noise;
 
 impl Fn<(f64, )> for Noise {
-    extern "rust-call" fn call(&self, (t, ): (f64, )) -> f64 {
+    extern "rust-call" fn call(&self, (_t, ): (f64, )) -> f64 {
         rand::thread_rng().next_f64()
     }
 }
