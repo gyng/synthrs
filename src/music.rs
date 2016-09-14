@@ -36,12 +36,12 @@ fn it_equal_tempers() {
     let a3 = 220.0;
     let d3 = 146.83;
     let fs6 = 1479.98;
-    assert!(note(a4, 9, 4).abs_sub(a4) < threshold);
-    assert!(note(a4, 9, 3).abs_sub(a3) < threshold);
-    assert!(note(a4, 0, 4).abs_sub(c4) < threshold);
-    assert!(note(a4, 2, 3).abs_sub(d3) < threshold);
-    assert!(note(a4, 6, 6).abs_sub(fs6) < threshold);
-    assert!(note(a4, 9, 4).abs_sub(c4) > threshold);
+    assert!((note(a4, 9, 4) - a4).abs() < threshold);
+    assert!((note(a4, 9, 3) - a3).abs() < threshold);
+    assert!((note(a4, 0, 4) - c4).abs() < threshold);
+    assert!((note(a4, 2, 3) - d3).abs() < threshold);
+    assert!((note(a4, 6, 6) - fs6).abs() < threshold);
+    assert!((note(a4, 9, 4) - c4).abs() > threshold);
 }
 
 #[test]
@@ -52,7 +52,7 @@ fn it_gets_frequency_for_a_midi_note() {
     let a3_note = 57;
     let c4_note = 60;
 
-    assert!(note(a4, 9, 4).abs_sub(note_midi(a4, a4_note)) < threshold);
-    assert!(note(a4, 9, 3).abs_sub(note_midi(a4, a3_note)) < threshold);
-    assert!(note(a4, 9, 4).abs_sub(note_midi(a4, c4_note)) > threshold);
+    assert!((note(a4, 9, 4) - note_midi(a4, a4_note)).abs() < threshold);
+    assert!((note(a4, 9, 3) - note_midi(a4, a3_note)).abs() < threshold);
+    assert!((note(a4, 9, 4) - note_midi(a4, c4_note)).abs() > threshold);
 }
