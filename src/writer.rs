@@ -1,3 +1,7 @@
+//! Writes samples to files.
+//!
+//! See any example file in `examples` for usage.
+
 use std::fs::OpenOptions;
 use std::io::Result;
 use std::path::Path;

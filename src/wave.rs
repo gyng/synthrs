@@ -1,3 +1,8 @@
+//! A collection of waveform generating functions.
+//!
+//! Given a time `t` and `frequency`, returns the amplitude of the waveform
+//! at the given time.
+
 use std::f64::consts::PI;
 
 use rand;

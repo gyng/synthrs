@@ -1,7 +1,24 @@
 //! A collection of signal filters. To filter a bunch of samples, first create the
-//! filter and samples. Following that, run `convolve(filter, input)`.
+//! filter and samples.
 //!
-//! See: `examples/filters.rs`
+//! Typically, a filter is used in together with the convolve function:
+//!
+//! ```
+//! use synthrs::filter::{convolve, cutoff_from_frequency, lowpass_filter};
+//! use synthrs::synthesizer::{quantize_samples, make_samples};
+//! use synthrs::wave::SineWave;
+//!
+//! // Generate a bunch of samples at two different frequencies
+//! let samples = make_samples(1.0, 44100, |t: f64| -> f64 {
+//!     0.5 * (SineWave(6000.0)(t) + SineWave(80.0)(t))
+//! });
+//!
+//! // Create a lowpass filter, using a cutoff of 400Hz at a 44100Hz sample rate (ie. filter out frequencies >400Hz)
+//! let lowpass = lowpass_filter(cutoff_from_frequency(400.0, 44100), 0.01);
+//!
+//! // Apply convolution to filter out high frequencies
+//! let lowpass_samples = quantize_samples::<i16>(convolve(lowpass, samples));
+//! ```
 //!
 //! Common filter arguments:
 //!
@@ -10,6 +27,8 @@
 //!             frequencies below sample_rate / cutoff are preserved)
 //! * `band`: transition band as a fraction of the sample rate. This determines how
 //!         the cutoff "blends", or how harsh a cutoff this is.
+//!
+//! See: `examples/filters.rs`
 
 use std::f64::consts::PI;
 
@@ -43,6 +62,7 @@ pub fn lowpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
     }).collect()
 }
 
+/// Creates a Blackman window filter of a given size.
 pub fn blackman_window(size: usize) -> Vec<f64> {
     (0..size).map(|i| {
         0.42 - 0.5 * (2.0 * PI * i as f64 / (size as f64 - 1.0)).cos()
@@ -74,6 +94,8 @@ pub fn bandreject_filter(low_frequency: f64, high_frequency: f64, band: f64) -> 
     add(highpass, lowpass)
 }
 
+/// Given a filter, inverts it. For example, inverting a low-pass filter will result in a
+/// high-pass filter with the same cutoff frequency.
 pub fn spectral_invert(filter: Vec<f64>) -> Vec<f64> {
     assert_eq!(filter.len() % 2, 0);
     let mut count = 0;
@@ -102,6 +124,8 @@ pub fn convolve(filter: Vec<f64>, input: Vec<f64>) -> Vec<f64> {
     output
 }
 
+/// Performs elementwise addition of two `Vec<f64>`s. Can be used to combine filters together
+/// (eg. combining a low-pass filter with a high-pass filter to create a band-pass filter)
 pub fn add(left: Vec<f64>, right: Vec<f64>) -> Vec<f64> {
     left.iter().zip(right.iter()).map(|tup| {
         *tup.0 + *tup.1

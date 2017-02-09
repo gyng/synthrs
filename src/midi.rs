@@ -431,6 +431,7 @@ impl<'a, T> Iterator for EventIterator<'a, T> where T: Read+Seek+'a {
     }
 }
 
+/// Reads from a MIDI file into a `Result<MidiSong>`.
 pub fn read_midi<P: AsRef<Path>>(path: P) -> Result<MidiSong> {
     let file = match File::open(path) {
         Ok(f) => f,
