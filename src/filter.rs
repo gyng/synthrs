@@ -17,14 +17,14 @@
 //! let lowpass = lowpass_filter(cutoff_from_frequency(400.0, 44100), 0.01);
 //!
 //! // Apply convolution to filter out high frequencies
-//! let lowpass_samples = quantize_samples::<i16>(convolve(lowpass, samples));
+//! let lowpass_samples = quantize_samples::<i16>(&convolve(lowpass, samples));
 //! ```
 //!
 //! Common filter arguments:
 //!
 //! * `cutoff`: as a fraction of sample rate, can be obtained from
 //!             `cutoff_from_frequency(cutoff, sample_rate)`. (eg. for a lowpass filter
-//!             frequencies below sample_rate / cutoff are preserved)
+//!             frequencies below `sample_rate` / `cutoff` are preserved)
 //! * `band`: transition band as a fraction of the sample rate. This determines how
 //!         the cutoff "blends", or how harsh a cutoff this is.
 //!
@@ -73,7 +73,7 @@ pub fn blackman_window(size: usize) -> Vec<f64> {
 /// Creates a high-pass filter. Frequencies above the cutoff are preserved when
 /// samples are convolved with this filter.
 pub fn highpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
-    spectral_invert(lowpass_filter(cutoff, band))
+    spectral_invert(&lowpass_filter(cutoff, band))
 }
 
 /// Creates a low-pass filter. Frequencies between `low_frequency` and `high_frequency`
@@ -96,7 +96,7 @@ pub fn bandreject_filter(low_frequency: f64, high_frequency: f64, band: f64) -> 
 
 /// Given a filter, inverts it. For example, inverting a low-pass filter will result in a
 /// high-pass filter with the same cutoff frequency.
-pub fn spectral_invert(filter: Vec<f64>) -> Vec<f64> {
+pub fn spectral_invert(filter: &[f64]) -> Vec<f64> {
     assert_eq!(filter.len() % 2, 0);
     let mut count = 0;
 
