@@ -14,45 +14,45 @@ fn main() {
     // 2. quantize_samples::<i16> quantizes the floating-point samples as a signed 16-bit int
     // 3. write_pcm writes the samples to a PCM file
     write_pcm("out/sin.pcm",
-        quantize_samples::<i16>(make_samples(1.0, 44100, SineWave(440.0)))
-    ).ok().expect("failed");
+        &quantize_samples::<i16>(&make_samples(1.0, 44100, SineWave(440.0)))
+    ).expect("failed");
 
     write_wav("out/sin.wav", 44100,
-        quantize_samples::<i16>(make_samples(1.0, 44100, SineWave(440.0)))
-    ).ok().expect("failed");
+        &quantize_samples::<i16>(&make_samples(1.0, 44100, SineWave(440.0)))
+    ).expect("failed");
 
     write_wav("out/square.wav", 44100,
-        quantize_samples::<i16>(make_samples(1.0, 44100, SquareWave(440.0)))
-    ).ok().expect("failed");
+        &quantize_samples::<i16>(&make_samples(1.0, 44100, SquareWave(440.0)))
+    ).expect("failed");
 
     write_wav("out/sawtooth.wav", 44100,
-        quantize_samples::<i16>(make_samples(1.0, 44100, SawtoothWave(440.0)))
-    ).ok().expect("failed");
+        &quantize_samples::<i16>(&make_samples(1.0, 44100, SawtoothWave(440.0)))
+    ).expect("failed");
 
     write_wav("out/triangle.wav", 44100,
-        quantize_samples::<i16>(make_samples(1.0, 44100, TriangleWave(440.0)))
-    ).ok().expect("failed");
+        &quantize_samples::<i16>(&make_samples(1.0, 44100, TriangleWave(440.0)))
+    ).expect("failed");
 
     write_wav("out/tangent.wav", 44100,
-        quantize_samples::<i16>(make_samples(1.0, 44100, TangentWave(440.0)))
-    ).ok().expect("failed");
+        &quantize_samples::<i16>(&make_samples(1.0, 44100, TangentWave(440.0)))
+    ).expect("failed");
 
     write_wav("out/noise.wav", 44100,
-        quantize_samples::<i16>(make_samples(1.0, 44100, Noise))
-    ).ok().expect("failed");
+        &quantize_samples::<i16>(&make_samples(1.0, 44100, Noise))
+    ).expect("failed");
 
     // Custom function for tone generation, t is in seconds
     write_wav("out/wolftone.wav", 44100,
-        quantize_samples::<i16>(
-            make_samples(1.0, 44100, |t: f64| -> f64 {
+        &quantize_samples::<i16>(
+            &make_samples(1.0, 44100, |t: f64| -> f64 {
                 (SquareWave(1000.0)(t) + SquareWave(1020.0)(t)) / 2.0
             })
         )
-    ).ok().expect("failed");
+    ).expect("failed");
 
     write_wav("out/rising.wav", 44100,
-        quantize_samples::<i16>(
-            make_samples(1.0, 44100, |t: f64| -> f64 {
+        &quantize_samples::<i16>(
+            &make_samples(1.0, 44100, |t: f64| -> f64 {
                 let (min_f, max_f) = (1000.0, 8000.0);
                 let max_t = 1.0; // Duration of clip in seconds
                 let range = max_f - min_f;
@@ -60,29 +60,29 @@ fn main() {
                 SineWave(f)(t)
             })
         )
-    ).ok().expect("failed");
+    ).expect("failed");
 
     write_wav("out/bell.wav", 44100,
-        quantize_samples::<i16>(
-            make_samples(10.0, 44100, |t: f64| -> f64 {
+        &quantize_samples::<i16>(
+            &make_samples(10.0, 44100, |t: f64| -> f64 {
                 Bell(200.0, 0.003, 0.5)(t)
             })
         )
-    ).ok().expect("failed");
+    ).expect("failed");
 
     write_wav("out/karplusstrong.wav", 44100,
-        quantize_samples::<i16>(
-            peak_normalize(
-                make_samples(5.0, 44100, |t: f64| -> f64 {
+        &quantize_samples::<i16>(
+            &peak_normalize(
+                &make_samples(5.0, 44100, |t: f64| -> f64 {
                     KarplusStrong(SawtoothWave(440.0), 0.01, 1.0, 0.9, 44100.0)(t)
                 })
             )
         )
-    ).ok().expect("failed");
+    ).expect("failed");
 
     write_wav("out/racecar.wav", 44100,
-        quantize_samples::<i16>(
-            make_samples(15.0, 44100, |t: f64| -> f64 {
+        &quantize_samples::<i16>(
+            &make_samples(15.0, 44100, |t: f64| -> f64 {
                 let mut out = 0.0;
                 if t < 14.0 { out += SawtoothWave(40.63 * (t / 2.0))(t); } // Engine
                 if t < 1.0 { out += SawtoothWave(30.0)(t) * 10.0; } // Engine start
@@ -93,11 +93,11 @@ fn main() {
                 (out / 4.0).min(1.0)
             })
         )
-    ).ok().expect("failed");
+    ).expect("failed");
 
     write_wav("out/shepard.wav", 44100,
-        quantize_samples::<i16>(
-            make_samples(30.0, 44100, |t: f64| -> f64 {
+        &quantize_samples::<i16>(
+            &make_samples(30.0, 44100, |t: f64| -> f64 {
                 let length = 10.0;
                 let t_mod = t % length;
                 let progress = t_mod / length;
@@ -110,5 +110,5 @@ fn main() {
                 + tone_a3(t_mod) + tone_a4(t_mod)) / 4.0
             })
         )
-    ).ok().expect("failed");
+    ).expect("failed");
 }

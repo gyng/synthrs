@@ -42,15 +42,15 @@ pub fn quantize<T>(input: f64) -> T where T: Num+FromPrimitive+Bounded {
 
 /// Quantizes a `Vec<f64>` of samples into `Vec<T>`.
 ///
-/// This creates a 16-bit SineWave at 440Hz:
+/// This creates a 16-bit `SineWave` at 440Hz:
 ///
 /// ```
 /// use synthrs::wave::SineWave;
 /// use synthrs::synthesizer::{quantize_samples, make_samples};
 ///
-/// quantize_samples::<i16>(make_samples(1.0, 44100, SineWave(440.0)));
+/// quantize_samples::<i16>(&make_samples(1.0, 44100, SineWave(440.0)));
 /// ```
-pub fn quantize_samples<T>(input: Vec<f64>) -> Vec<T> where T: Num+FromPrimitive+Bounded {
+pub fn quantize_samples<T>(input: &[f64]) -> Vec<T> where T: Num+FromPrimitive+Bounded {
     input.iter().map(|s| { quantize::<T>(*s) }).collect()
 }
 
@@ -73,12 +73,12 @@ pub fn make_samples<F>(length: f64, sample_rate: usize, waveform: F) -> Vec<f64>
 
 /// Peak normalizes a `Vec<f64>` of samples such that the maximum and minimum amplitudes of the
 /// `Vec<f64>` samples are within the range [-1.0, 1.0]
-pub fn peak_normalize(samples: Vec<f64>) -> Vec<f64> {
+pub fn peak_normalize(samples: &[f64]) -> Vec<f64> {
     let peak = samples.iter().fold(0.0f64, |acc, &sample| {
         acc.max(sample).max(-sample)
     });
 
-    samples.iter().map(|&sample| {
+samples.iter().map(|&sample| {
         sample / peak
     }).collect()
 }
@@ -95,7 +95,7 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
         notes_on_for_ticks.push(notes_on_for_tick);
     }
 
-    for track in song.tracks.iter() {
+    for track in &song.tracks {
         for i in 0..track.events.len() {
             let event = track.events[i];
             if event.event_type == midi::EventType::NoteOn {
@@ -113,8 +113,8 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
                     }
                 }
 
-                for tick in start_tick..end_tick {
-                    notes_on_for_ticks[tick].push((note as u8, velocity as u8, start_tick));
+                for on_notes in notes_on_for_ticks.iter_mut().take(end_tick).skip(start_tick) {
+                    on_notes.push((note as u8, velocity as u8, start_tick));
                 }
             }
         }
@@ -125,7 +125,7 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
         let mut out = 0.0;
 
         if tick < notes_on_for_ticks.len() {
-            for &(note, velocity, start_tick) in notes_on_for_ticks[tick].iter() {
+            for &(note, velocity, start_tick) in &notes_on_for_ticks[tick] {
                 let frequency = music::note_midi(440.0, note as usize);
                 let loudness = (6.908 * (velocity as f64 / 255.0)).exp() / 1000.0;
                 let attack = 0.01;
@@ -148,17 +148,17 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
         samples.push(midi_frequency_function(t));
     }
 
-    peak_normalize(samples)
+    peak_normalize(&samples)
 }
 
 #[test]
 fn it_peak_normalizes() {
     let input_negative = vec![-2.0f64, 1.0, -1.0];
-    let output_negative = peak_normalize(input_negative);
+    let output_negative = peak_normalize(&input_negative);
     assert_eq!(output_negative, vec![-1.0f64, 0.5, -0.5]);
 
     let input_positive = vec![2.0f64, 1.0, -1.0];
-    let output_positive = peak_normalize(input_positive);
+    let output_positive = peak_normalize(&input_positive);
     assert_eq!(output_positive, vec![1.0f64, 0.5, -0.5])
 }
 

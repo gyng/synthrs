@@ -1,9 +1,9 @@
-/target
+target
 .cargo
 Cargo.lock
-/config.stamp
-/Makefile
-/config.mk
+config.stamp
+Makefile
+config.mk
 
 main
 main.exe
