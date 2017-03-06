@@ -141,14 +141,14 @@ pub fn cutoff_from_frequency(frequency: f64, sample_rate: usize) -> f64 {
 /// Simple linear attack/decay envelope. No sustain or release.
 pub fn envelope(relative_t: f64, attack: f64, decay: f64) -> f64 {
     if relative_t < 0.0 {
-        0.0
+        return 0.0
     } else if relative_t < attack {
-        relative_t / attack
+        return relative_t / attack
     } else if relative_t < attack + decay {
-        1.0 - (relative_t - attack) / decay
-    } else {
-        0.0
+        return 1.0 - (relative_t - attack) / decay
     }
+
+    0.0
 }
 
 #[test]

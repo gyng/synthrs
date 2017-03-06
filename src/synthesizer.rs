@@ -95,7 +95,7 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
         notes_on_for_ticks.push(notes_on_for_tick);
     }
 
-    for track in song.tracks.iter() {
+    for track in &song.tracks {
         for i in 0..track.events.len() {
             let event = track.events[i];
             if event.event_type == midi::EventType::NoteOn {
@@ -113,8 +113,8 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
                     }
                 }
 
-                for tick in start_tick..end_tick {
-                    notes_on_for_ticks[tick].push((note as u8, velocity as u8, start_tick));
+                for on_notes in notes_on_for_ticks.iter_mut().take(end_tick).skip(start_tick) {
+                    on_notes.push((note as u8, velocity as u8, start_tick));
                 }
             }
         }
@@ -125,7 +125,7 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
         let mut out = 0.0;
 
         if tick < notes_on_for_ticks.len() {
-            for &(note, velocity, start_tick) in notes_on_for_ticks[tick].iter() {
+            for &(note, velocity, start_tick) in &notes_on_for_ticks[tick] {
                 let frequency = music::note_midi(440.0, note as usize);
                 let loudness = (6.908 * (velocity as f64 / 255.0)).exp() / 1000.0;
                 let attack = 0.01;

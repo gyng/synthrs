@@ -450,14 +450,11 @@ pub fn read_midi<P: AsRef<Path>>(path: P) -> Result<MidiSong> {
 
     // Guess song tempo (only take the first tempo change event)
     // This means tempo changes in-song are not supported
-    for track in song.tracks.iter() {
-        for event in track.events.iter() {
-            match event.meta_event_type {
-                Some(MetaEventType::TempoSetting) => {
-                    song.bpm = (60000000.0 / event.value1 as f64) as f64;
-                    break;
-                },
-                _ => {}
+    for track in &song.tracks {
+        for event in &track.events {
+            if let Some(MetaEventType::TempoSetting) = event.meta_event_type {
+                song.bpm = (60000000.0 / event.value1 as f64) as f64;
+                break;
             }
         }
     }
