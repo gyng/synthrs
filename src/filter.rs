@@ -17,7 +17,7 @@
 //! let lowpass = lowpass_filter(cutoff_from_frequency(400.0, 44100), 0.01);
 //!
 //! // Apply convolution to filter out high frequencies
-//! let lowpass_samples = quantize_samples::<i16>(&convolve(lowpass, samples));
+//! let lowpass_samples = quantize_samples::<i16>(&convolve(&lowpass, &samples));
 //! ```
 //!
 //! Common filter arguments:
@@ -82,7 +82,7 @@ pub fn bandpass_filter(low_frequency: f64, high_frequency: f64, band: f64) -> Ve
     assert!(low_frequency <= high_frequency);
     let lowpass = lowpass_filter(high_frequency, band);
     let highpass = highpass_filter(low_frequency, band);
-    convolve(highpass, lowpass)
+    convolve(&highpass, &lowpass)
 }
 
 /// Creates a low-pass filter. Frequencies outside of `low_frequency` and `high_frequency`
@@ -91,7 +91,7 @@ pub fn bandreject_filter(low_frequency: f64, high_frequency: f64, band: f64) -> 
     assert!(low_frequency <= high_frequency);
     let lowpass = lowpass_filter(low_frequency, band);
     let highpass = highpass_filter(high_frequency, band);
-    add(highpass, lowpass)
+    add(&highpass, &lowpass)
 }
 
 /// Given a filter, inverts it. For example, inverting a low-pass filter will result in a
@@ -107,7 +107,7 @@ pub fn spectral_invert(filter: &[f64]) -> Vec<f64> {
     }).collect()
 }
 
-pub fn convolve(filter: Vec<f64>, input: Vec<f64>) -> Vec<f64> {
+pub fn convolve(filter: &[f64], input: &[f64]) -> Vec<f64> {
     let mut output: Vec<f64> = Vec::new();
     let h_len = (filter.len() / 2) as isize;
 
@@ -126,7 +126,7 @@ pub fn convolve(filter: Vec<f64>, input: Vec<f64>) -> Vec<f64> {
 
 /// Performs elementwise addition of two `Vec<f64>`s. Can be used to combine filters together
 /// (eg. combining a low-pass filter with a high-pass filter to create a band-pass filter)
-pub fn add(left: Vec<f64>, right: Vec<f64>) -> Vec<f64> {
+pub fn add(left: &[f64], right: &[f64]) -> Vec<f64> {
     left.iter().zip(right.iter()).map(|tup| {
         *tup.0 + *tup.1
     }).collect()
@@ -156,7 +156,7 @@ fn it_convolves() {
     let filter = vec!(1.0, 1.0, 1.0);
     let input = vec!(0.0, 0.0, 3.0, 0.0, 3.0, 0.0, 0.0);
     let output = vec!(0.0, 3.0, 3.0, 6.0, 3.0, 3.0, 0.0);
-    assert_eq!(convolve(filter, input), output);
+    assert_eq!(convolve(&filter, &input), output);
 }
 
 #[test]
@@ -164,7 +164,7 @@ fn it_does_elementwise_addition_of_two_samples() {
     let a = vec!(1.0, -1.0, -8.0);
     let b = vec!(-1.0, 5.0, 3.0);
     let expected = vec!(0.0, 4.0, -5.0);
-    assert_eq!(add(a, b), expected);
+    assert_eq!(add(&a, &b), expected);
 }
 
 #[test]
