@@ -40,30 +40,29 @@ To write a custom tone to a WAV file
 extern crate synthrs;
 
 use synthrs::synthesizer::{ make_samples, quantize_samples };
-use synthrs::wave::SquareWave;
+use synthrs::wave::SineWave;
 use synthrs::writer::write_wav;
 
 fn main() {
-    write_wav("out/wolftone.wav", 44100,
-        quantize_samples::<i16>(
-            make_samples(1.0, 44100, |t: f64| -> f64 {
-                (SquareWave(1000.0)(t) + SquareWave(1020.0)(t)) / 2.0
-            })
+    write_wav("out/sin.wav", 44100,
+        &quantize_samples::<i16>(
+            &make_samples(1.0, 44100, SineWave(440.0))
         )
-    ).ok().expect("failed");
+    ).expect("failed to write to file");
+
 }
 ```
 
-More examples are in `examples/`.
+More examples are in [`examples/`](examples/).
 
 ### Examples
 
-Check out `Cargo.toml` for the full example list.
+Check out [`Cargo.toml`](Cargo.toml) for the full example list.
 
-* `simple` generates simple tones in `out/`
-* `telecoms` generates phone tones in `out/`
-* `filters` generates examples of audio filtering in `out/`
-* `midi` synthesises a few MIDI files in `out/`
+* [`simple`](examples/simple.rs) generates simple tones in `out/`
+* [`telecoms`](examples/telecoms.rs) generates phone tones in `out/`
+* [`filters`](examples/filters.rs) generates examples of audio filtering in `out/`
+* [`midi`](examples/midi.rs) synthesises a few MIDI files in `out/`
 
 This generates WAV or PCM files which can be opened in Audacity. Example MIDI files are public domain as far as I can tell.
 
@@ -78,4 +77,4 @@ This generates WAV or PCM files which can be opened in Audacity. Example MIDI fi
 
 ## License
 
-synthrs is licensed under the MIT License. See `LICENSE` for details.
+synthrs is licensed under the MIT License. See [`LICENSE`](LICENSE) for details.
