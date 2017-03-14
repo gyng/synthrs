@@ -8,11 +8,11 @@ use synthrs::writer::{ write_pcm, write_wav };
 
 fn main() {
     // This creates a sine wave for 1.0s at 44100Hz
-    // 0. SineWave create a 440Hz sine function
-    // 1. make_samples creates a Vec of samples from the SineWave function
+    // 0. `SineWave` create a 440Hz sine function
+    // 1. `make_samples` creates a `Vec` of samples from the `SineWave` function
     //    from 0.0 to 1.0 seconds at a 44100Hz sample rate
-    // 2. quantize_samples::<i16> quantizes the floating-point samples as a signed 16-bit int
-    // 3. write_pcm writes the samples to a PCM file
+    // 2. `quantize_samples::<i16>` quantizes the floating-point samples as a signed 16-bit int
+    // 3. `write_pcm` writes the samples to a PCM file
     write_pcm("out/sin.pcm",
         &quantize_samples::<i16>(&make_samples(1.0, 44100, SineWave(440.0)))
     ).expect("failed");
