@@ -16,11 +16,11 @@ Toy synthesiser library in Rust. Requires Rust nightly for now (ie. does not com
 
 #### Examples (loud)
 
-* [busy signal](https://dl.dropboxusercontent.com/u/38256631/busysignal.ogg)
-* [bell](https://dl.dropboxusercontent.com/u/38256631/bell.ogg)
-* [mtnking-pure](https://dl.dropboxusercontent.com/u/38256631/mountainking-puresquare.ogg) *pure square wave*
-* [mtnking-envelope](https://dl.dropboxusercontent.com/u/38256631/mountainking.ogg) *butchered Karplus-Strong square wave with attack and decay*
-* [rustle](https://dl.dropboxusercontent.com/u/38256631/rustle.ogg)
+* [busy signal](examples/assets/busysignal.ogg)
+* [bell](examples/assets/bell.ogg)
+* [mtnking-pure](examples/assets/mountainking-puresquare.ogg) *pure square wave*
+* [mtnking-envelope](examples/assets/mountainking.ogg) *butchered Karplus-Strong square wave with attack and decay*
+* [rustle](examples/assets/rustle.ogg)
 * [assorted synthesized MIDIs](http://sugoi.pw/samples/) *pure square waves*
 
 ## Try
