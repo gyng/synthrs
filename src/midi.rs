@@ -1,10 +1,10 @@
 use std::cmp::max;
 use std::fs::File;
-use std::io::{ BufReader, Error, ErrorKind, Result, Read, Seek, SeekFrom };
+use std::io::{BufReader, Error, ErrorKind, Result, Read, Seek, SeekFrom};
 use std::path::Path;
 use std::vec;
 
-use byteorder::{ BigEndian, ReadBytesExt };
+use byteorder::{BigEndian, ReadBytesExt};
 
 // http://www.midi.org/techspecs/midimessages.php
 // http://www.ccarh.org/courses/253/handout/smf/
@@ -20,7 +20,7 @@ pub enum EventType {
     ProgramChange,
     ChannelPressure,
     PitchBendChange,
-    System
+    System,
 }
 
 impl EventType {
@@ -34,7 +34,7 @@ impl EventType {
             0xd => Some(EventType::ChannelPressure),
             0xe => Some(EventType::PitchBendChange),
             0xf => Some(EventType::System),
-            _ => None
+            _ => None,
         }
     }
 }
@@ -52,7 +52,7 @@ pub enum SystemEventType {
     Continue,
     Stop,
     ActiveSensing,
-    SystemResetOrMeta
+    SystemResetOrMeta,
 }
 
 impl SystemEventType {
@@ -70,7 +70,7 @@ impl SystemEventType {
             0xc => Some(SystemEventType::Stop),
             0xe => Some(SystemEventType::ActiveSensing),
             0xf => Some(SystemEventType::SystemResetOrMeta),
-            _ => None
+            _ => None,
         }
     }
 }
@@ -90,27 +90,27 @@ pub enum MetaEventType {
     TempoSetting,
     SmpteOffset,
     TimeSignature,
-    SequencerSpecificEvent
+    SequencerSpecificEvent,
 }
 
 impl MetaEventType {
     fn from_u8(n: u8) -> Option<MetaEventType> {
         match n {
-           0x00 => Some(MetaEventType::SequenceNumber),
-           0x01 => Some(MetaEventType::TextEvent),
-           0x02 => Some(MetaEventType::CopyrightNotice),
-           0x03 => Some(MetaEventType::SequenceOrTrackName),
-           0x04 => Some(MetaEventType::InstrumentName),
-           0x05 => Some(MetaEventType::LyricText),
-           0x06 => Some(MetaEventType::MarkerText),
-           0x07 => Some(MetaEventType::CuePoint),
-           0x20 => Some(MetaEventType::MidiChannelPrefixAssignment),
-           0x2f => Some(MetaEventType::EndOfTrack),
-           0x51 => Some(MetaEventType::TempoSetting),
-           0x54 => Some(MetaEventType::SmpteOffset),
-           0x58 => Some(MetaEventType::TimeSignature),
-           0x7f => Some(MetaEventType::SequencerSpecificEvent),
-            _ => None
+            0x00 => Some(MetaEventType::SequenceNumber),
+            0x01 => Some(MetaEventType::TextEvent),
+            0x02 => Some(MetaEventType::CopyrightNotice),
+            0x03 => Some(MetaEventType::SequenceOrTrackName),
+            0x04 => Some(MetaEventType::InstrumentName),
+            0x05 => Some(MetaEventType::LyricText),
+            0x06 => Some(MetaEventType::MarkerText),
+            0x07 => Some(MetaEventType::CuePoint),
+            0x20 => Some(MetaEventType::MidiChannelPrefixAssignment),
+            0x2f => Some(MetaEventType::EndOfTrack),
+            0x51 => Some(MetaEventType::TempoSetting),
+            0x54 => Some(MetaEventType::SmpteOffset),
+            0x58 => Some(MetaEventType::TimeSignature),
+            0x7f => Some(MetaEventType::SequencerSpecificEvent),
+            _ => None,
         }
     }
 }
@@ -120,12 +120,12 @@ pub struct MidiSong {
     pub time_unit: isize,
     pub tracks: Vec<MidiTrack>,
     pub track_count: usize,
-    pub bpm: f64
+    pub bpm: f64,
 }
 
 pub struct MidiTrack {
     pub events: Vec<MidiEvent>,
-    pub max_time: usize
+    pub max_time: usize,
 }
 
 impl MidiTrack {
@@ -133,7 +133,7 @@ impl MidiTrack {
         let events: Vec<MidiEvent> = Vec::new();
         MidiTrack {
             events: events,
-            max_time: 0
+            max_time: 0,
         }
     }
 }
@@ -146,31 +146,37 @@ pub struct MidiEvent {
     pub time: usize,
     pub channel: u8,
     pub value1: usize,
-    pub value2: Option<usize>
+    pub value2: Option<usize>,
 }
 
 impl MidiEvent {
     // NoteOn with velocity 0 == NoteOff
     pub fn is_note_terminating(self) -> bool {
         (self.event_type == EventType::NoteOff) ||
-        (self.event_type == EventType::NoteOn &&
-        !self.value2.is_none() &&
-        self.value2.unwrap() == 0)
+            (self.event_type == EventType::NoteOn && !self.value2.is_none() &&
+                 self.value2.unwrap() == 0)
     }
 }
 
-struct EventIterator<'a, T> where T: Read+Seek+'a {
+struct EventIterator<'a, T>
+where
+    T: Read + Seek + 'a,
+{
     reader: &'a mut T,
     time: usize,
     delta_time: usize,
     running_status: Option<EventType>,
     running_channel: Option<u8>,
     is_running: bool,
-    end_of_track: bool
+    end_of_track: bool,
 }
 
 #[derive(Debug)]
-enum DataLength { Single, Double, System }
+enum DataLength {
+    Single,
+    Double,
+    System,
+}
 
 // Similar to try! but this wraps the IoError return in an Option instead
 // This is used for the Iterator impl which has a signature of -> Option<Result<T>>
@@ -201,7 +207,10 @@ impl IntoIterator for MidiTrack {
     }
 }
 
-impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
+impl<'a, T> EventIterator<'a, T>
+where
+    T: Read + Seek + 'a,
+{
     fn new(reader: &'a mut T) -> EventIterator<'a, T> {
         EventIterator {
             reader: reader,
@@ -210,7 +219,7 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
             running_status: None,
             running_channel: None,
             is_running: false,
-            end_of_track: false
+            end_of_track: false,
         }
     }
 
@@ -226,13 +235,10 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
         //    Data 1   Data 2
 
         let (value1, value2) = match length {
-            DataLength::Single => (
-                try!(self.reader.read_u8()) as usize,
-                None
-            ),
+            DataLength::Single => (try!(self.reader.read_u8()) as usize, None),
             DataLength::Double => (
                 try!(self.reader.read_u8()) as usize,
-                Some(try!(self.reader.read_u8()) as usize)
+                Some(try!(self.reader.read_u8()) as usize),
             ),
             DataLength::System => {
                 panic!("this should not have happened");
@@ -246,7 +252,7 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
             time: self.time,
             channel: self.running_channel.unwrap(),
             value1: value1,
-            value2: value2
+            value2: value2,
         })
     }
 
@@ -257,12 +263,14 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
         match system_event_type {
             SystemEventType::SystemExclusive => {
                 let _ = self.read_sysex(); // discard sysex messages
-            },
+            }
 
             SystemEventType::EndOfSystemExclusive => {
                 // All EndOfSystemExclusive messages should be captured by SystemExclusive message handling
-                panic!("unexpected EndOfSystemExclusive MIDI message: unsupported, bad, or corrupt file?")
-            },
+                panic!(
+                    "unexpected EndOfSystemExclusive MIDI message: unsupported, bad, or corrupt file?"
+                )
+            }
 
             SystemEventType::TuneRequest |
             SystemEventType::TimingClock |
@@ -272,17 +280,17 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
             SystemEventType::Stop |
             SystemEventType::ActiveSensing => {
                 // Unhandled, these have no data bytes
-            },
+            }
 
             SystemEventType::SongPositionPointer |
             SystemEventType::SongSelect => {
                 // Unhandled, these have two data bytes
                 try_opt!(self.reader.seek(SeekFrom::Current(2)));
-            },
+            }
 
             SystemEventType::SystemResetOrMeta => {
                 // These are typically meta messages
-                return self.read_meta_event(system_event_type)
+                return self.read_meta_event(system_event_type);
             }
         }
 
@@ -296,7 +304,7 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
         match meta_message_type {
             Some(MetaEventType::EndOfTrack) => {
                 self.end_of_track = true;
-            },
+            }
 
             Some(MetaEventType::TempoSetting) => {
                 assert_eq!(meta_data_size, 3usize);
@@ -305,7 +313,8 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
                 let tempo_byte3 = try_opt!(self.reader.read_u8()) as usize;
                 // Casting to usize below is done to kill shift overflow errors
                 // Somehow, it works...
-                let tempo = (tempo_byte1 << 16) as usize + (tempo_byte2 << 8) as usize + tempo_byte3;
+                let tempo = (tempo_byte1 << 16) as usize + (tempo_byte2 << 8) as usize +
+                    tempo_byte3;
 
                 return Some(Ok(MidiEvent {
                     event_type: self.running_status.unwrap(),
@@ -314,9 +323,9 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
                     time: self.time,
                     channel: self.running_channel.unwrap(),
                     value1: tempo,
-                    value2: None
-                }))
-            },
+                    value2: None,
+                }));
+            }
 
             _ => {
                 // Discard unhandled meta messages
@@ -379,23 +388,20 @@ impl<'a, T> EventIterator<'a, T> where T: Read+Seek+'a {
             EventType::NoteOn |
             EventType::PolyponicKeyPressure |
             EventType::ControlChange |
-            EventType::PitchBendChange => {
-                DataLength::Double
-            },
+            EventType::PitchBendChange => DataLength::Double,
 
             EventType::ProgramChange |
-            EventType::ChannelPressure => {
-                DataLength::Single
-            },
+            EventType::ChannelPressure => DataLength::Single,
 
-            EventType::System => {
-                DataLength::System
-            }
+            EventType::System => DataLength::System,
         }
     }
 }
 
-impl<'a, T> Iterator for EventIterator<'a, T> where T: Read+Seek+'a {
+impl<'a, T> Iterator for EventIterator<'a, T>
+where
+    T: Read + Seek + 'a,
+{
     type Item = Result<MidiEvent>;
 
     fn next(&mut self) -> Option<Result<MidiEvent>> {
@@ -412,12 +418,11 @@ impl<'a, T> Iterator for EventIterator<'a, T> where T: Read+Seek+'a {
             }
 
             match self.get_event_length(self.running_status.unwrap()) {
-                length @ DataLength::Single | length @ DataLength::Double => {
-                    return Some(self.read_data_event(length))
-                },
+                length @ DataLength::Single |
+                length @ DataLength::Double => return Some(self.read_data_event(length)),
                 DataLength::System => {
                     if let Some(system_event) = self.read_system_event() {
-                        return Some(system_event)
+                        return Some(system_event);
                     }
                 }
             }
@@ -435,7 +440,7 @@ impl<'a, T> Iterator for EventIterator<'a, T> where T: Read+Seek+'a {
 pub fn read_midi<P: AsRef<Path>>(path: P) -> Result<MidiSong> {
     let file = match File::open(path) {
         Ok(f) => f,
-        Err(err) => return Err(err)
+        Err(err) => return Err(err),
     };
     let mut reader = BufReader::new(file);
     let mut song = try!(read_midi_header(&mut reader));
@@ -462,30 +467,36 @@ pub fn read_midi<P: AsRef<Path>>(path: P) -> Result<MidiSong> {
     Ok(song)
 }
 
-fn read_midi_header<T>(reader: &mut T) -> Result<MidiSong> where T: Read+Seek {
+fn read_midi_header<T>(reader: &mut T) -> Result<MidiSong>
+where
+    T: Read + Seek,
+{
     assert_eq!(try!(reader.read_u32::<BigEndian>()), 0x4d546864); // MThd in hexadecimal
-    assert_eq!(try!(reader.read_u32::<BigEndian>()), 6);          // Header length; always 6 bytes
-    let _file_format  = try!(reader.read_u16::<BigEndian>());     // 0 = single track, 1 = multitrack, 2 = multisong
-    let track_count   = try!(reader.read_u16::<BigEndian>());
-    let time_division = try!(reader.read_u16::<BigEndian>());     // If positive, units per beat. If negative, SMPTE units
+    assert_eq!(try!(reader.read_u32::<BigEndian>()), 6); // Header length; always 6 bytes
+    let _file_format = try!(reader.read_u16::<BigEndian>()); // 0 = single track, 1 = multitrack, 2 = multisong
+    let track_count = try!(reader.read_u16::<BigEndian>());
+    let time_division = try!(reader.read_u16::<BigEndian>()); // If positive, units per beat. If negative, SMPTE units
 
     Ok(MidiSong {
         max_time: 0,
         time_unit: time_division as isize,
         tracks: Vec::new(),
         track_count: track_count as usize,
-        bpm: 120.0 // MIDI default BPM, can be changed by MIDI events later
+        bpm: 120.0, // MIDI default BPM, can be changed by MIDI events later
     })
 }
 
-fn read_midi_track<T>(reader: &mut T) -> Result<MidiTrack> where T: Read+Seek {
+fn read_midi_track<T>(reader: &mut T) -> Result<MidiTrack>
+where
+    T: Read + Seek,
+{
     assert_eq!(try!(reader.read_u32::<BigEndian>()), 0x4d54726b); // MTrk in hexadecimal
     let _track_chunk_size = try!(reader.read_u32::<BigEndian>());
     let mut track = MidiTrack::new();
 
-    track.events = EventIterator::new(reader).map(|event| {
-        event.unwrap()
-    }).collect::<Vec<_>>();
+    track.events = EventIterator::new(reader)
+        .map(|event| event.unwrap())
+        .collect::<Vec<_>>();
 
     track.max_time = if track.events.len() > 1 {
         track.events[track.events.len() - 1usize].time
@@ -527,19 +538,25 @@ fn it_parses_a_midi_file() {
 
 #[test]
 fn it_parses_a_midi_file_with_multiple_tracks() {
-    let song = read_midi("tests/assets/multitrack.mid").ok().expect("failed");
+    let song = read_midi("tests/assets/multitrack.mid").ok().expect(
+        "failed",
+    );
     assert_eq!(song.tracks.len(), 3);
 }
 
 #[test]
 fn it_parses_a_midi_file_with_running_status() {
-    let song = read_midi("tests/assets/running_status.mid").ok().expect("failed");
+    let song = read_midi("tests/assets/running_status.mid").ok().expect(
+        "failed",
+    );
     assert_eq!(song.tracks.len(), 1);
     assert_eq!(song.max_time, 5640);
 }
 
 #[test]
 fn it_parses_the_bpm_of_a_midi_file() {
-    let song = read_midi("tests/assets/running_status.mid").ok().expect("failed");
+    let song = read_midi("tests/assets/running_status.mid").ok().expect(
+        "failed",
+    );
     assert_eq!(song.bpm as usize, 160);
 }

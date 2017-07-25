@@ -35,7 +35,10 @@ use wave;
 /// assert_eq!(quantize::<u8>(1.0f64), 127u8); // half of available quantization space of a u8 (255)
 /// assert_eq!(quantize::<u8>(-1.0f64), 129u8); // unexpected behaviour
 /// ```
-pub fn quantize<T>(input: f64) -> T where T: Num+FromPrimitive+Bounded {
+pub fn quantize<T>(input: f64) -> T
+where
+    T: Num + FromPrimitive + Bounded,
+{
     let quantization_levels = 2.0.powf(size_of::<T>() as f64 * 8.0) - 1.0;
     T::from_f64(input * (quantization_levels / 2.0)).expect("failed to quantize to given type")
 }
@@ -50,16 +53,25 @@ pub fn quantize<T>(input: f64) -> T where T: Num+FromPrimitive+Bounded {
 ///
 /// quantize_samples::<i16>(&make_samples(1.0, 44100, SineWave(440.0)));
 /// ```
-pub fn quantize_samples<T>(input: &[f64]) -> Vec<T> where T: Num+FromPrimitive+Bounded {
-    input.iter().map(|s| { quantize::<T>(*s) }).collect()
+pub fn quantize_samples<T>(input: &[f64]) -> Vec<T>
+where
+    T: Num + FromPrimitive + Bounded,
+{
+    input.iter().map(|s| quantize::<T>(*s)).collect()
 }
 
 /// Invokes the waveform function `f` at time `t` to return the amplitude at that time.
-pub fn generate<F>(t: f64, f: &F) -> f64 where F: Fn(f64) -> f64 {
-    f.call((t, ))
+pub fn generate<F>(t: f64, f: &F) -> f64
+where
+    F: Fn(f64) -> f64,
+{
+    f.call((t,))
 }
 
-pub fn make_samples<F>(length: f64, sample_rate: usize, waveform: F) -> Vec<f64> where F: Fn(f64) -> f64 {
+pub fn make_samples<F>(length: f64, sample_rate: usize, waveform: F) -> Vec<f64>
+where
+    F: Fn(f64) -> f64,
+{
     let num_samples = (sample_rate as f64 * length).floor() as usize;
     let mut samples: Vec<f64> = Vec::with_capacity(num_samples);
 
@@ -78,9 +90,7 @@ pub fn peak_normalize(samples: &[f64]) -> Vec<f64> {
         acc.max(sample).max(-sample)
     });
 
-samples.iter().map(|&sample| {
-        sample / peak
-    }).collect()
+    samples.iter().map(|&sample| sample / peak).collect()
 }
 
 // This is really awful, is there a more elegant way to do this?
@@ -113,7 +123,10 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
                     }
                 }
 
-                for on_notes in notes_on_for_ticks.iter_mut().take(end_tick).skip(start_tick) {
+                for on_notes in notes_on_for_ticks.iter_mut().take(end_tick).skip(
+                    start_tick,
+                )
+                {
                     on_notes.push((note as u8, velocity as u8, start_tick));
                 }
             }
@@ -132,7 +145,8 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
                 let decay = 1.0;
                 let start_t = start_tick as f64 * 60.0 / song.bpm as f64 / song.time_unit as f64;
                 let relative_t = t - start_t;
-                out += loudness * wave::SquareWave(frequency)(t) * filter::envelope(relative_t, attack, decay)
+                out += loudness * wave::SquareWave(frequency)(t) *
+                    filter::envelope(relative_t, attack, decay)
 
             }
         }

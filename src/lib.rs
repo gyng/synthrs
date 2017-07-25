@@ -11,4 +11,3 @@ pub mod music;
 pub mod synthesizer;
 pub mod wave;
 pub mod writer;
-

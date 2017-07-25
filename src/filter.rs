@@ -36,38 +36,38 @@ use std::f64::consts::PI;
 /// samples are convolved with this filter.
 pub fn lowpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
     let mut n = (4.0 / band).ceil() as usize;
-    if n % 2 == 1 { n += 1; }
+    if n % 2 == 1 {
+        n += 1;
+    }
 
-    let sinc = |x: f64| -> f64 {
-        (x * PI).sin() / (x * PI)
-    };
+    let sinc = |x: f64| -> f64 { (x * PI).sin() / (x * PI) };
 
-    let sinc_wave: Vec<f64> = (0..n).map(|i| {
-        sinc(2.0 * cutoff * (i as f64 - (n as f64 - 1.0) / 2.0))
-    }).collect();
+    let sinc_wave: Vec<f64> = (0..n)
+        .map(|i| sinc(2.0 * cutoff * (i as f64 - (n as f64 - 1.0) / 2.0)))
+        .collect();
 
     let blackman_window = blackman_window(n);
 
-    let filter: Vec<f64> =  sinc_wave.iter().zip(blackman_window.iter()).map(|tup| {
-        *tup.0 * *tup.1
-    }).collect();
+    let filter: Vec<f64> = sinc_wave
+        .iter()
+        .zip(blackman_window.iter())
+        .map(|tup| *tup.0 * *tup.1)
+        .collect();
 
     // Normalize
-    let sum = filter.iter().fold(0.0, |acc, &el| {
-        acc + el
-    });
+    let sum = filter.iter().fold(0.0, |acc, &el| acc + el);
 
-    filter.iter().map(|&el| {
-        el / sum
-    }).collect()
+    filter.iter().map(|&el| el / sum).collect()
 }
 
 /// Creates a Blackman window filter of a given size.
 pub fn blackman_window(size: usize) -> Vec<f64> {
-    (0..size).map(|i| {
-        0.42 - 0.5 * (2.0 * PI * i as f64 / (size as f64 - 1.0)).cos()
-        + 0.08 * (4.0 * PI * i as f64 / (size as f64 - 1.0)).cos()
-    }).collect()
+    (0..size)
+        .map(|i| {
+            0.42 - 0.5 * (2.0 * PI * i as f64 / (size as f64 - 1.0)).cos() +
+                0.08 * (4.0 * PI * i as f64 / (size as f64 - 1.0)).cos()
+        })
+        .collect()
 }
 
 /// Creates a high-pass filter. Frequencies above the cutoff are preserved when
@@ -100,11 +100,14 @@ pub fn spectral_invert(filter: &[f64]) -> Vec<f64> {
     assert_eq!(filter.len() % 2, 0);
     let mut count = 0;
 
-    filter.iter().map(|&el| {
-        let add = if count == filter.len() / 2 { 1.0 } else { 0.0 };
-        count += 1;
-        -el + add
-    }).collect()
+    filter
+        .iter()
+        .map(|&el| {
+            let add = if count == filter.len() / 2 { 1.0 } else { 0.0 };
+            count += 1;
+            -el + add
+        })
+        .collect()
 }
 
 pub fn convolve(filter: &[f64], input: &[f64]) -> Vec<f64> {
@@ -116,7 +119,9 @@ pub fn convolve(filter: &[f64], input: &[f64]) -> Vec<f64> {
         for j in 0isize..filter.len() as isize {
             let input_idx = i + j;
             let output_idx = i + h_len;
-            if input_idx < 0 || input_idx >= input.len() as isize { continue }
+            if input_idx < 0 || input_idx >= input.len() as isize {
+                continue;
+            }
             output[output_idx as usize] += input[input_idx as usize] * filter[j as usize]
         }
     }
@@ -127,9 +132,10 @@ pub fn convolve(filter: &[f64], input: &[f64]) -> Vec<f64> {
 /// Performs elementwise addition of two `Vec<f64>`s. Can be used to combine filters together
 /// (eg. combining a low-pass filter with a high-pass filter to create a band-pass filter)
 pub fn add(left: &[f64], right: &[f64]) -> Vec<f64> {
-    left.iter().zip(right.iter()).map(|tup| {
-        *tup.0 + *tup.1
-    }).collect()
+    left.iter()
+        .zip(right.iter())
+        .map(|tup| *tup.0 + *tup.1)
+        .collect()
 }
 
 /// Returns the cutoff fraction for a given cutoff frequency at a sample rate, which can be
@@ -141,11 +147,11 @@ pub fn cutoff_from_frequency(frequency: f64, sample_rate: usize) -> f64 {
 /// Simple linear attack/decay envelope. No sustain or release.
 pub fn envelope(relative_t: f64, attack: f64, decay: f64) -> f64 {
     if relative_t < 0.0 {
-        return 0.0
+        return 0.0;
     } else if relative_t < attack {
-        return relative_t / attack
+        return relative_t / attack;
     } else if relative_t < attack + decay {
-        return 1.0 - (relative_t - attack) / decay
+        return 1.0 - (relative_t - attack) / decay;
     }
 
     0.0
@@ -153,17 +159,17 @@ pub fn envelope(relative_t: f64, attack: f64, decay: f64) -> f64 {
 
 #[test]
 fn it_convolves() {
-    let filter = vec!(1.0, 1.0, 1.0);
-    let input = vec!(0.0, 0.0, 3.0, 0.0, 3.0, 0.0, 0.0);
-    let output = vec!(0.0, 3.0, 3.0, 6.0, 3.0, 3.0, 0.0);
+    let filter = vec![1.0, 1.0, 1.0];
+    let input = vec![0.0, 0.0, 3.0, 0.0, 3.0, 0.0, 0.0];
+    let output = vec![0.0, 3.0, 3.0, 6.0, 3.0, 3.0, 0.0];
     assert_eq!(convolve(&filter, &input), output);
 }
 
 #[test]
 fn it_does_elementwise_addition_of_two_samples() {
-    let a = vec!(1.0, -1.0, -8.0);
-    let b = vec!(-1.0, 5.0, 3.0);
-    let expected = vec!(0.0, 4.0, -5.0);
+    let a = vec![1.0, -1.0, -8.0];
+    let b = vec![-1.0, 5.0, 3.0];
+    let expected = vec![0.0, 4.0, -5.0];
     assert_eq!(add(&a, &b), expected);
 }
 
