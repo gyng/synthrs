@@ -235,10 +235,10 @@ where
         //    Data 1   Data 2
 
         let (value1, value2) = match length {
-            DataLength::Single => (try!(self.reader.read_u8()) as usize, None),
+            DataLength::Single => (self.reader.read_u8()? as usize, None),
             DataLength::Double => (
-                try!(self.reader.read_u8()) as usize,
-                Some(try!(self.reader.read_u8()) as usize),
+                self.reader.read_u8()? as usize,
+                Some(self.reader.read_u8()? as usize),
             ),
             DataLength::System => {
                 panic!("this should not have happened");
@@ -339,10 +339,10 @@ where
     fn read_sysex(&mut self) -> Result<()> {
         // Discard all sysex messages
         // Variable data length: read until EndOfSystemExclusive byte
-        let mut next_byte = try!(self.reader.read_u8()) & 0b00001111;
+        let mut next_byte = self.reader.read_u8()? & 0b00001111;
         let mut system_event_type = SystemEventType::from_u8(next_byte);
         while system_event_type != Some(SystemEventType::EndOfSystemExclusive) {
-            next_byte = try!(self.reader.read_u8()) & 0b00001111;
+            next_byte = self.reader.read_u8()? & 0b00001111;
             system_event_type = SystemEventType::from_u8(next_byte);
         }
 
@@ -372,10 +372,10 @@ where
         //                             7[6 5 4 3 2 1 0]
         //              no more bytes: 0 b b b b b b b
 
-        let mut octet = try!(self.reader.read_u8());
+        let mut octet = self.reader.read_u8()?;
         let mut value = (octet & 0b01111111) as usize;
         while octet >= 0b10000000 {
-            octet = try!(self.reader.read_u8());
+            octet = self.reader.read_u8()?;
             value = (value << 7) as usize + (octet & 0b01111111) as usize;
         }
 
@@ -443,10 +443,10 @@ pub fn read_midi<P: AsRef<Path>>(path: P) -> Result<MidiSong> {
         Err(err) => return Err(err),
     };
     let mut reader = BufReader::new(file);
-    let mut song = try!(read_midi_header(&mut reader));
+    let mut song = read_midi_header(&mut reader)?;
 
     for _ in 0usize..song.track_count {
-        song.tracks.push(try!(read_midi_track(&mut reader)));
+        song.tracks.push(read_midi_track(&mut reader)?);
     }
 
     song.max_time = song.tracks.iter().fold(0usize, |acc, track| {
@@ -471,11 +471,11 @@ fn read_midi_header<T>(reader: &mut T) -> Result<MidiSong>
 where
     T: Read + Seek,
 {
-    assert_eq!(try!(reader.read_u32::<BigEndian>()), 0x4d546864); // MThd in hexadecimal
-    assert_eq!(try!(reader.read_u32::<BigEndian>()), 6); // Header length; always 6 bytes
-    let _file_format = try!(reader.read_u16::<BigEndian>()); // 0 = single track, 1 = multitrack, 2 = multisong
-    let track_count = try!(reader.read_u16::<BigEndian>());
-    let time_division = try!(reader.read_u16::<BigEndian>()); // If positive, units per beat. If negative, SMPTE units
+    assert_eq!(reader.read_u32::<BigEndian>()?, 0x4d546864); // MThd in hexadecimal
+    assert_eq!(reader.read_u32::<BigEndian>()?, 6); // Header length; always 6 bytes
+    let _file_format = reader.read_u16::<BigEndian>()?; // 0 = single track, 1 = multitrack, 2 = multisong
+    let track_count = reader.read_u16::<BigEndian>()?;
+    let time_division = reader.read_u16::<BigEndian>()?; // If positive, units per beat. If negative, SMPTE units
 
     Ok(MidiSong {
         max_time: 0,
@@ -490,8 +490,8 @@ fn read_midi_track<T>(reader: &mut T) -> Result<MidiTrack>
 where
     T: Read + Seek,
 {
-    assert_eq!(try!(reader.read_u32::<BigEndian>()), 0x4d54726b); // MTrk in hexadecimal
-    let _track_chunk_size = try!(reader.read_u32::<BigEndian>());
+    assert_eq!(reader.read_u32::<BigEndian>()?, 0x4d54726b); // MTrk in hexadecimal
+    let _track_chunk_size = reader.read_u32::<BigEndian>()?;
     let mut track = MidiTrack::new();
 
     track.events = EventIterator::new(reader)
