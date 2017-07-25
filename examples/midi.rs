@@ -2,37 +2,43 @@
 
 extern crate synthrs;
 
-use synthrs::synthesizer::{ make_samples_from_midi, quantize_samples };
+use synthrs::synthesizer::{make_samples_from_midi, quantize_samples};
 use synthrs::writer::write_wav;
 
 fn main() {
-    write_wav("out/octave.wav", 44100,
-        &quantize_samples::<i16>(
-            &make_samples_from_midi(44100, "examples/assets/octave.mid")
-        )
+    write_wav(
+        "out/octave.wav",
+        44100,
+        &quantize_samples::<i16>(&make_samples_from_midi(44100, "examples/assets/octave.mid")),
     ).expect("failed");
 
-    write_wav("out/seikilos.wav", 44100,
-        &quantize_samples::<i16>(
-            &make_samples_from_midi(44100, "examples/assets/seikilos.mid")
-        )
+    write_wav(
+        "out/seikilos.wav",
+        44100,
+        &quantize_samples::<i16>(&make_samples_from_midi(
+            44100,
+            "examples/assets/seikilos.mid",
+        )),
     ).expect("failed");
 
-    write_wav("out/danube.wav", 44100,
-        &quantize_samples::<i16>(
-            &make_samples_from_midi(44100, "examples/assets/danube.mid")
-        )
+    write_wav(
+        "out/danube.wav",
+        44100,
+        &quantize_samples::<i16>(&make_samples_from_midi(44100, "examples/assets/danube.mid")),
     ).expect("failed");
 
-    write_wav("out/mountainking.wav", 44100,
-        &quantize_samples::<i16>(
-        &make_samples_from_midi(44100, "examples/assets/mountainking.mid")
-        )
+    write_wav(
+        "out/mountainking.wav",
+        44100,
+        &quantize_samples::<i16>(&make_samples_from_midi(
+            44100,
+            "examples/assets/mountainking.mid",
+        )),
     ).expect("failed");
 
-    write_wav("out/rustle.wav", 44100,
-        &quantize_samples::<i16>(
-            &make_samples_from_midi(44100, "examples/assets/rustle.mid")
-        )
+    write_wav(
+        "out/rustle.wav",
+        44100,
+        &quantize_samples::<i16>(&make_samples_from_midi(44100, "examples/assets/rustle.mid")),
     ).expect("failed");
 }
