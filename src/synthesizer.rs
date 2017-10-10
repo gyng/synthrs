@@ -14,6 +14,7 @@
 //! See: `examples/simple.rs`
 
 use std::mem::size_of;
+use std::iter::Iterator;
 
 use num::Float;
 use num::traits::{Bounded, FromPrimitive, Num};
@@ -81,6 +82,43 @@ where
     }
 
     samples
+}
+
+/// An iterator that generates samples of a waveform at a given sample rate
+///
+/// ```
+/// use synthrs::synthesizer::SamplesIter;
+/// use synthrs::wave::SineWave;
+///
+/// let mut sine_iter = SamplesIter::new(44100, Box::new(SineWave(440.0)));
+/// let samples = sine_iter.take(44100).collect::<Vec<f64>>(); // take 1 second of samples
+/// let _slice = samples.as_slice();
+/// ```
+pub struct SamplesIter {
+    i: u64,
+    sample_rate: u64,
+    waveform: Box<Fn(f64) -> f64>,
+}
+
+impl SamplesIter {
+    /// Returns an iterator that generates samples for the waveform at the given sample rate
+    pub fn new(sample_rate: u64, waveform: Box<Fn(f64) -> f64>) -> SamplesIter {
+        SamplesIter {
+            i: 0,
+            sample_rate: sample_rate,
+            waveform: waveform,
+        }
+    }
+}
+
+impl Iterator for SamplesIter {
+    type Item = f64;
+
+    fn next(&mut self) -> Option<f64> {
+        let t = self.i as f64 / self.sample_rate as f64;
+        self.i = self.i + 1;
+        Some(self.waveform.call((t,)))
+    }
 }
 
 /// Peak normalizes a `Vec<f64>` of samples such that the maximum and minimum amplitudes of the
@@ -165,28 +203,46 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
     peak_normalize(&samples)
 }
 
-#[test]
-fn it_peak_normalizes() {
-    let input_negative = vec![-2.0f64, 1.0, -1.0];
-    let output_negative = peak_normalize(&input_negative);
-    assert_eq!(output_negative, vec![-1.0f64, 0.5, -0.5]);
-
-    let input_positive = vec![2.0f64, 1.0, -1.0];
-    let output_positive = peak_normalize(&input_positive);
-    assert_eq!(output_positive, vec![1.0f64, 0.5, -0.5])
-}
-
 #[cfg(test)]
-use std::i8;
+mod tests {
+    use std::i8;
+    use std::i16;
 
-#[cfg(test)]
-use std::i16;
+    use super::*;
+    use wave::SineWave;
 
-#[test]
-fn it_quantizes() {
-    assert_eq!(i8::MAX, quantize::<i8>(1.0));
-    // assert_eq!(i8::MIN + 1, quantize::<i8>(-1.0)); // Bad quantization behaviour?
-    assert_eq!(i16::MAX, quantize::<i16>(1.0));
-    assert_eq!(0.0f32, quantize::<f32>(0.0));
-    // assert_eq!(u8::MAX, quantize::<u8>(1.0)); // TODO: Make quantization work for unsigned types
+    #[test]
+    fn it_peak_normalizes() {
+        let input_negative = vec![-2.0f64, 1.0, -1.0];
+        let output_negative = peak_normalize(&input_negative);
+        assert_eq!(output_negative, vec![-1.0f64, 0.5, -0.5]);
+
+        let input_positive = vec![2.0f64, 1.0, -1.0];
+        let output_positive = peak_normalize(&input_positive);
+        assert_eq!(output_positive, vec![1.0f64, 0.5, -0.5])
+    }
+
+    #[test]
+    fn it_quantizes() {
+        assert_eq!(i8::MAX, quantize::<i8>(1.0));
+        // assert_eq!(i8::MIN + 1, quantize::<i8>(-1.0)); // Bad quantization behaviour?
+        assert_eq!(i16::MAX, quantize::<i16>(1.0));
+        assert_eq!(0.0f32, quantize::<f32>(0.0));
+        // assert_eq!(u8::MAX, quantize::<u8>(1.0)); // TODO: Make quantization work for unsigned types
+    }
+
+    #[test]
+    fn test_samples_iterator() {
+        let mut iter = SamplesIter::new(1, Box::new(SineWave(3.1415)));
+        assert_eq!(iter.next().unwrap(), 0.0);
+        assert_eq!(iter.next().unwrap(), 0.7764865126870779);
+        assert_eq!(iter.next().unwrap(), 0.9785809043254725);
+    }
+
+    #[test]
+    fn test_make_samples() {
+        let waveform = SineWave(3.1415);
+        let samples = make_samples(3.0, 1, waveform);
+        assert_eq!(vec![0.0, 0.7764865126870779, 0.9785809043254725], samples);
+    }
 }

@@ -2,7 +2,7 @@
 
 extern crate synthrs;
 
-use synthrs::synthesizer::{make_samples, quantize_samples, peak_normalize};
+use synthrs::synthesizer::{make_samples, quantize_samples, peak_normalize, SamplesIter};
 use synthrs::wave::{SineWave, SquareWave, SawtoothWave, TriangleWave, TangentWave, Bell,
                     KarplusStrong, Noise};
 use synthrs::writer::{write_pcm, write_wav};
@@ -23,6 +23,13 @@ fn main() {
         "out/sin.wav",
         44100,
         &quantize_samples::<i16>(&make_samples(1.0, 44100, SineWave(440.0))),
+    ).expect("failed");
+
+    let sine_iter = SamplesIter::new(44100, Box::new(SineWave(440.0)));
+    write_wav(
+        "out/sin_iter.wav",
+        44100,
+        &quantize_samples::<i16>(sine_iter.take(44100).collect::<Vec<f64>>().as_slice()),
     ).expect("failed");
 
     write_wav(
