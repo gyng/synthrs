@@ -157,28 +157,33 @@ pub fn envelope(relative_t: f64, attack: f64, decay: f64) -> f64 {
     0.0
 }
 
-#[test]
-fn it_convolves() {
-    let filter = vec![1.0, 1.0, 1.0];
-    let input = vec![0.0, 0.0, 3.0, 0.0, 3.0, 0.0, 0.0];
-    let output = vec![0.0, 3.0, 3.0, 6.0, 3.0, 3.0, 0.0];
-    assert_eq!(convolve(&filter, &input), output);
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[test]
-fn it_does_elementwise_addition_of_two_samples() {
-    let a = vec![1.0, -1.0, -8.0];
-    let b = vec![-1.0, 5.0, 3.0];
-    let expected = vec![0.0, 4.0, -5.0];
-    assert_eq!(add(&a, &b), expected);
-}
+    #[test]
+    fn it_convolves() {
+        let filter = vec![1.0, 1.0, 1.0];
+        let input = vec![0.0, 0.0, 3.0, 0.0, 3.0, 0.0, 0.0];
+        let output = vec![0.0, 3.0, 3.0, 6.0, 3.0, 3.0, 0.0];
+        assert_eq!(convolve(&filter, &input), output);
+    }
 
-#[test]
-fn it_envelopes_a_value() {
-    assert_eq!(envelope(0.25, 1.0, 1.0), 0.25);
-    assert_eq!(envelope(0.5, 1.0, 1.0), 0.5);
-    assert_eq!(envelope(1.0, 1.0, 1.0), 1.0);
-    assert_eq!(envelope(1.5, 1.0, 1.0), 0.5);
-    assert_eq!(envelope(3.0, 1.0, 1.0), 0.0);
-    assert_eq!(envelope(-0.5, 1.0, 1.0), 0.0);
+    #[test]
+    fn it_does_elementwise_addition_of_two_samples() {
+        let a = vec![1.0, -1.0, -8.0];
+        let b = vec![-1.0, 5.0, 3.0];
+        let expected = vec![0.0, 4.0, -5.0];
+        assert_eq!(add(&a, &b), expected);
+    }
+
+    #[test]
+    fn it_envelopes_a_value() {
+        assert_eq!(envelope(0.25, 1.0, 1.0), 0.25);
+        assert_eq!(envelope(0.5, 1.0, 1.0), 0.5);
+        assert_eq!(envelope(1.0, 1.0, 1.0), 1.0);
+        assert_eq!(envelope(1.5, 1.0, 1.0), 0.5);
+        assert_eq!(envelope(3.0, 1.0, 1.0), 0.0);
+        assert_eq!(envelope(-0.5, 1.0, 1.0), 0.0);
+    }
 }

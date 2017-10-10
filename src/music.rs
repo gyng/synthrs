@@ -28,31 +28,36 @@ pub fn note_midi(a4: f64, midi_note: usize) -> f64 {
     note(a4, semitone, octave)
 }
 
-#[test]
-fn it_equal_tempers() {
-    let threshold = 0.1;
-    let c4 = 261.63;
-    let a4 = 440.0;
-    let a3 = 220.0;
-    let d3 = 146.83;
-    let fs6 = 1479.98;
-    assert!((note(a4, 9, 4) - a4).abs() < threshold);
-    assert!((note(a4, 9, 3) - a3).abs() < threshold);
-    assert!((note(a4, 0, 4) - c4).abs() < threshold);
-    assert!((note(a4, 2, 3) - d3).abs() < threshold);
-    assert!((note(a4, 6, 6) - fs6).abs() < threshold);
-    assert!((note(a4, 9, 4) - c4).abs() > threshold);
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[test]
-fn it_gets_frequency_for_a_midi_note() {
-    let threshold = 0.1;
-    let a4 = 440.0;
-    let a4_note = 69;
-    let a3_note = 57;
-    let c4_note = 60;
+    #[test]
+    fn it_equal_tempers() {
+        let threshold = 0.1;
+        let c4 = 261.63;
+        let a4 = 440.0;
+        let a3 = 220.0;
+        let d3 = 146.83;
+        let fs6 = 1479.98;
+        assert!((note(a4, 9, 4) - a4).abs() < threshold);
+        assert!((note(a4, 9, 3) - a3).abs() < threshold);
+        assert!((note(a4, 0, 4) - c4).abs() < threshold);
+        assert!((note(a4, 2, 3) - d3).abs() < threshold);
+        assert!((note(a4, 6, 6) - fs6).abs() < threshold);
+        assert!((note(a4, 9, 4) - c4).abs() > threshold);
+    }
 
-    assert!((note(a4, 9, 4) - note_midi(a4, a4_note)).abs() < threshold);
-    assert!((note(a4, 9, 3) - note_midi(a4, a3_note)).abs() < threshold);
-    assert!((note(a4, 9, 4) - note_midi(a4, c4_note)).abs() > threshold);
+    #[test]
+    fn it_gets_frequency_for_a_midi_note() {
+        let threshold = 0.1;
+        let a4 = 440.0;
+        let a4_note = 69;
+        let a3_note = 57;
+        let c4_note = 60;
+
+        assert!((note(a4, 9, 4) - note_midi(a4, a4_note)).abs() < threshold);
+        assert!((note(a4, 9, 3) - note_midi(a4, a3_note)).abs() < threshold);
+        assert!((note(a4, 9, 4) - note_midi(a4, c4_note)).abs() > threshold);
+    }
 }

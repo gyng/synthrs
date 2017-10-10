@@ -507,56 +507,61 @@ where
     Ok(track)
 }
 
-#[test]
-fn it_parses_a_midi_file() {
-    let song = read_midi("tests/assets/test.mid").ok().expect("failed");
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    assert_eq!(song.tracks.len(), 2); // metadata track included
-    let ref messages = song.tracks[1].events;
+    #[test]
+    fn it_parses_a_midi_file() {
+        let song = read_midi("tests/assets/test.mid").ok().expect("failed");
 
-    // ProgramChange
-    assert_eq!(messages[0].event_type, EventType::ProgramChange);
-    assert_eq!(messages[0].time, 0);
-    assert_eq!(messages[0].channel, 0);
-    assert_eq!(messages[0].value1, 0);
-    assert_eq!(messages[0].value2, None);
+        assert_eq!(song.tracks.len(), 2); // metadata track included
+        let ref messages = song.tracks[1].events;
 
-    // NoteOn
-    assert_eq!(messages[1].event_type, EventType::NoteOn);
-    assert_eq!(messages[1].time, 0);
-    assert_eq!(messages[1].channel, 0);
-    assert_eq!(messages[1].value1, 57);
-    assert_eq!(messages[1].value2, Some(64));
+        // ProgramChange
+        assert_eq!(messages[0].event_type, EventType::ProgramChange);
+        assert_eq!(messages[0].time, 0);
+        assert_eq!(messages[0].channel, 0);
+        assert_eq!(messages[0].value1, 0);
+        assert_eq!(messages[0].value2, None);
 
-    // NoteOff
-    assert_eq!(messages[2].event_type, EventType::NoteOff);
-    assert_eq!(messages[2].time, 960);
-    assert_eq!(messages[2].channel, 0);
-    assert_eq!(messages[2].value1, 57);
-    assert_eq!(messages[2].value2, Some(0));
-}
+        // NoteOn
+        assert_eq!(messages[1].event_type, EventType::NoteOn);
+        assert_eq!(messages[1].time, 0);
+        assert_eq!(messages[1].channel, 0);
+        assert_eq!(messages[1].value1, 57);
+        assert_eq!(messages[1].value2, Some(64));
 
-#[test]
-fn it_parses_a_midi_file_with_multiple_tracks() {
-    let song = read_midi("tests/assets/multitrack.mid").ok().expect(
-        "failed",
-    );
-    assert_eq!(song.tracks.len(), 3);
-}
+        // NoteOff
+        assert_eq!(messages[2].event_type, EventType::NoteOff);
+        assert_eq!(messages[2].time, 960);
+        assert_eq!(messages[2].channel, 0);
+        assert_eq!(messages[2].value1, 57);
+        assert_eq!(messages[2].value2, Some(0));
+    }
 
-#[test]
-fn it_parses_a_midi_file_with_running_status() {
-    let song = read_midi("tests/assets/running_status.mid").ok().expect(
-        "failed",
-    );
-    assert_eq!(song.tracks.len(), 1);
-    assert_eq!(song.max_time, 5640);
-}
+    #[test]
+    fn it_parses_a_midi_file_with_multiple_tracks() {
+        let song = read_midi("tests/assets/multitrack.mid").ok().expect(
+            "failed",
+        );
+        assert_eq!(song.tracks.len(), 3);
+    }
 
-#[test]
-fn it_parses_the_bpm_of_a_midi_file() {
-    let song = read_midi("tests/assets/running_status.mid").ok().expect(
-        "failed",
-    );
-    assert_eq!(song.bpm as usize, 160);
+    #[test]
+    fn it_parses_a_midi_file_with_running_status() {
+        let song = read_midi("tests/assets/running_status.mid").ok().expect(
+            "failed",
+        );
+        assert_eq!(song.tracks.len(), 1);
+        assert_eq!(song.max_time, 5640);
+    }
+
+    #[test]
+    fn it_parses_the_bpm_of_a_midi_file() {
+        let song = read_midi("tests/assets/running_status.mid").ok().expect(
+            "failed",
+        );
+        assert_eq!(song.bpm as usize, 160);
+    }
 }
