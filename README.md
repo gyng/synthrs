@@ -44,9 +44,9 @@ use synthrs::wave::SineWave;
 use synthrs::writer::write_wav;
 
 fn main() {
-    write_wav("out/sin.wav", 44100,
+    write_wav("out/sin.wav", 44_100,
         &quantize_samples::<i16>(
-            &make_samples(1.0, 44100, SineWave(440.0))
+            &make_samples(1.0, 44_100, SineWave(440.0))
         )
     ).expect("failed to write to file");
 
@@ -73,7 +73,7 @@ This generates WAV or PCM files which can be opened in Audacity. Example MIDI fi
 * Signed 16-bit PCM
 * Little-endian
 * 1 Channel (Mono)
-* Sample rate: 44100Hz
+* Sample rate: 44_100Hz
 
 ## License
 

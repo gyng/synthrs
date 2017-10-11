@@ -21,6 +21,7 @@ pub enum EventType {
     ChannelPressure,
     PitchBendChange,
     System,
+    Unknown,
 }
 
 impl EventType {
@@ -53,6 +54,7 @@ pub enum SystemEventType {
     Stop,
     ActiveSensing,
     SystemResetOrMeta,
+    Unknown,
 }
 
 impl SystemEventType {
@@ -154,7 +156,7 @@ impl MidiEvent {
     pub fn is_note_terminating(self) -> bool {
         (self.event_type == EventType::NoteOff) ||
             (self.event_type == EventType::NoteOn && !self.value2.is_none() &&
-                 self.value2.unwrap() == 0)
+                 self.value2.unwrap_or(0) == 0)
     }
 }
 
@@ -176,6 +178,7 @@ enum DataLength {
     Single,
     Double,
     System,
+    Unknown,
 }
 
 // Similar to try! but this wraps the IoError return in an Option instead
@@ -240,17 +243,17 @@ where
                 self.reader.read_u8()? as usize,
                 Some(self.reader.read_u8()? as usize),
             ),
-            DataLength::System => {
-                panic!("this should not have happened");
+            DataLength::System | DataLength::Unknown => {
+                panic!("this should not have happened")
             }
         };
 
         Ok(MidiEvent {
-            event_type: self.running_status.unwrap(),
+            event_type: self.running_status.unwrap_or(EventType::Unknown),
             system_event_type: None,
             meta_event_type: None,
             time: self.time,
-            channel: self.running_channel.unwrap(),
+            channel: self.running_channel.unwrap_or(0),
             value1: value1,
             value2: value2,
         })
@@ -258,7 +261,8 @@ where
 
     /// Returns none if no system messages were handled
     fn read_system_event(&mut self) -> Option<Result<MidiEvent>> {
-        let system_event_type = SystemEventType::from_u8(self.running_channel.unwrap()).unwrap();
+        let system_event_type = SystemEventType::from_u8(self.running_channel.unwrap_or(0xff))
+            .unwrap_or(SystemEventType::Unknown);
 
         match system_event_type {
             SystemEventType::SystemExclusive => {
@@ -292,13 +296,17 @@ where
                 // These are typically meta messages
                 return self.read_meta_event(system_event_type);
             }
+
+            SystemEventType::Unknown => {
+                return None;
+            }
         }
 
         None
     }
 
     fn read_meta_event(&mut self, system_event_type: SystemEventType) -> Option<Result<MidiEvent>> {
-        let meta_message_type = MetaEventType::from_u8(self.reader.read_u8().unwrap());
+        let meta_message_type = MetaEventType::from_u8(self.reader.read_u8().unwrap_or(0xff));
         let meta_data_size = try_opt!(self.read_variable_number());
 
         match meta_message_type {
@@ -317,11 +325,11 @@ where
                     tempo_byte3;
 
                 return Some(Ok(MidiEvent {
-                    event_type: self.running_status.unwrap(),
+                    event_type: self.running_status.unwrap_or(EventType::Unknown),
                     system_event_type: Some(system_event_type),
                     meta_event_type: meta_message_type,
                     time: self.time,
-                    channel: self.running_channel.unwrap(),
+                    channel: self.running_channel.unwrap_or(0),
                     value1: tempo,
                     value2: None,
                 }));
@@ -339,10 +347,10 @@ where
     fn read_sysex(&mut self) -> Result<()> {
         // Discard all sysex messages
         // Variable data length: read until EndOfSystemExclusive byte
-        let mut next_byte = self.reader.read_u8()? & 0b00001111;
+        let mut next_byte = self.reader.read_u8()? & 0b0000_1111;
         let mut system_event_type = SystemEventType::from_u8(next_byte);
         while system_event_type != Some(SystemEventType::EndOfSystemExclusive) {
-            next_byte = self.reader.read_u8()? & 0b00001111;
+            next_byte = self.reader.read_u8()? & 0b0000_1111;
             system_event_type = SystemEventType::from_u8(next_byte);
         }
 
@@ -355,7 +363,7 @@ where
 
         if byte >= 0x80 {
             let status = EventType::from_u8(byte >> 4).unwrap();
-            let channel = byte & 0b00001111;
+            let channel = byte & 0b0000_1111;
             Some((status, channel))
         } else {
             self.reader.seek(SeekFrom::Current(-1)).ok();
@@ -373,10 +381,10 @@ where
         //              no more bytes: 0 b b b b b b b
 
         let mut octet = self.reader.read_u8()?;
-        let mut value = (octet & 0b01111111) as usize;
-        while octet >= 0b10000000 {
+        let mut value = (octet & 0b0111_1111) as usize;
+        while octet >= 0b1000_0000 {
             octet = self.reader.read_u8()?;
-            value = (value << 7) as usize + (octet & 0b01111111) as usize;
+            value = (value << 7) as usize + (octet & 0b0111_1111) as usize;
         }
 
         Ok(value)
@@ -394,6 +402,8 @@ where
             EventType::ChannelPressure => DataLength::Single,
 
             EventType::System => DataLength::System,
+
+            EventType::Unknown => DataLength::Unknown,
         }
     }
 }
@@ -425,6 +435,7 @@ where
                         return Some(system_event);
                     }
                 }
+                DataLength::Unknown => return None,
             }
 
             if self.is_running {
@@ -471,7 +482,7 @@ fn read_midi_header<T>(reader: &mut T) -> Result<MidiSong>
 where
     T: Read + Seek,
 {
-    assert_eq!(reader.read_u32::<BigEndian>()?, 0x4d546864); // MThd in hexadecimal
+    assert_eq!(reader.read_u32::<BigEndian>()?, 0x4d54_6864); // MThd in hexadecimal
     assert_eq!(reader.read_u32::<BigEndian>()?, 6); // Header length; always 6 bytes
     let _file_format = reader.read_u16::<BigEndian>()?; // 0 = single track, 1 = multitrack, 2 = multisong
     let track_count = reader.read_u16::<BigEndian>()?;
@@ -490,7 +501,7 @@ fn read_midi_track<T>(reader: &mut T) -> Result<MidiTrack>
 where
     T: Read + Seek,
 {
-    assert_eq!(reader.read_u32::<BigEndian>()?, 0x4d54726b); // MTrk in hexadecimal
+    assert_eq!(reader.read_u32::<BigEndian>()?, 0x4d54_726b); // MTrk in hexadecimal
     let _track_chunk_size = reader.read_u32::<BigEndian>()?;
     let mut track = MidiTrack::new();
 

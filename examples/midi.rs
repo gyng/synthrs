@@ -8,37 +8,40 @@ use synthrs::writer::write_wav;
 fn main() {
     write_wav(
         "out/octave.wav",
-        44100,
-        &quantize_samples::<i16>(&make_samples_from_midi(44100, "examples/assets/octave.mid")),
+        44_100,
+        &quantize_samples::<i16>(&make_samples_from_midi(44_100, "examples/assets/octave.mid")
+            .unwrap()),
     ).expect("failed");
 
     write_wav(
         "out/seikilos.wav",
-        44100,
+        44_100,
         &quantize_samples::<i16>(&make_samples_from_midi(
-            44100,
+            44_100,
             "examples/assets/seikilos.mid",
-        )),
+        ).unwrap()),
     ).expect("failed");
 
     write_wav(
         "out/danube.wav",
-        44100,
-        &quantize_samples::<i16>(&make_samples_from_midi(44100, "examples/assets/danube.mid")),
+        44_100,
+        &quantize_samples::<i16>(&make_samples_from_midi(44_100, "examples/assets/danube.mid")
+            .unwrap()),
     ).expect("failed");
 
     write_wav(
         "out/mountainking.wav",
-        44100,
+        44_100,
         &quantize_samples::<i16>(&make_samples_from_midi(
-            44100,
+            44_100,
             "examples/assets/mountainking.mid",
-        )),
+        ).unwrap()),
     ).expect("failed");
 
     write_wav(
         "out/rustle.wav",
-        44100,
-        &quantize_samples::<i16>(&make_samples_from_midi(44100, "examples/assets/rustle.mid")),
+        44_100,
+        &quantize_samples::<i16>(&make_samples_from_midi(44_100, "examples/assets/rustle.mid")
+            .unwrap()),
     ).expect("failed");
 }

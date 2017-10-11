@@ -44,11 +44,11 @@ pub fn write_wav(filename: &str, sample_rate: usize, samples: &[i16]) -> Result<
     let byte_rate = (sample_rate * channels * bit_depth / 8) as i32;
     let block_align = (channels * bit_depth / 8) as i16;
 
-    f.write_i32::<BigEndian>(0x52494646)?; // ChunkID, RIFF
+    f.write_i32::<BigEndian>(0x5249_4646)?; // ChunkID, RIFF
     f.write_i32::<LittleEndian>(chunk_size)?; // ChunkSize
-    f.write_i32::<BigEndian>(0x57415645)?; // Format, WAVE
+    f.write_i32::<BigEndian>(0x5741_5645)?; // Format, WAVE
 
-    f.write_i32::<BigEndian>(0x666d7420)?; // Subchunk1ID, fmt
+    f.write_i32::<BigEndian>(0x666d_7420)?; // Subchunk1ID, fmt
     f.write_i32::<LittleEndian>(16)?; // Subchunk1Size, 16 for PCM
     f.write_i16::<LittleEndian>(1)?; // AudioFormat, PCM = 1 (linear quantization)
     f.write_i16::<LittleEndian>(channels as i16)?; // NumChannels
@@ -57,7 +57,7 @@ pub fn write_wav(filename: &str, sample_rate: usize, samples: &[i16]) -> Result<
     f.write_i16::<LittleEndian>(block_align)?; // BlockAlign
     f.write_i16::<LittleEndian>(bit_depth as i16)?; // BitsPerSample
 
-    f.write_i32::<BigEndian>(0x64617461)?; // Subchunk2ID, data
+    f.write_i32::<BigEndian>(0x6461_7461)?; // Subchunk2ID, data
     f.write_i32::<LittleEndian>(subchunk_2_size as i32)?; // Subchunk2Size, number of bytes in the data
 
     for sample in samples {

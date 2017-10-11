@@ -6,8 +6,8 @@
 //! use synthrs::writer::write_wav;
 //! use synthrs::synthesizer::{quantize_samples, make_samples};
 //!
-//! write_wav("out/sine.wav", 44100,
-//!     quantize_samples::<i16>(make_samples(1.0, 44100, SineWave(440.0)))
+//! write_wav("out/sine.wav", 44_100,
+//!     quantize_samples::<i16>(make_samples(1.0, 44_100, SineWave(440.0)))
 //! ).ok().expect("failed");
 //! ```
 //!
@@ -23,6 +23,7 @@ use filter;
 use music;
 use midi;
 use wave;
+use errors::SynthrsError;
 
 /// Quantizes a `f64` sample into `T`.
 /// Convert from [-1.0f64, 1.0] to take up full quantization range of type `T`.
@@ -52,7 +53,7 @@ where
 /// use synthrs::wave::SineWave;
 /// use synthrs::synthesizer::{quantize_samples, make_samples};
 ///
-/// quantize_samples::<i16>(&make_samples(1.0, 44100, SineWave(440.0)));
+/// quantize_samples::<i16>(&make_samples(1.0, 44_100, SineWave(440.0)));
 /// ```
 pub fn quantize_samples<T>(input: &[f64]) -> Vec<T>
 where
@@ -90,8 +91,8 @@ where
 /// use synthrs::synthesizer::SamplesIter;
 /// use synthrs::wave::SineWave;
 ///
-/// let mut sine_iter = SamplesIter::new(44100, Box::new(SineWave(440.0)));
-/// let samples = sine_iter.take(44100).collect::<Vec<f64>>(); // take 1 second of samples
+/// let mut sine_iter = SamplesIter::new(44_100, Box::new(SineWave(440.0)));
+/// let samples = sine_iter.take(44_100).collect::<Vec<f64>>(); // take 1 second of samples
 /// let _slice = samples.as_slice();
 /// ```
 pub struct SamplesIter {
@@ -116,7 +117,7 @@ impl Iterator for SamplesIter {
 
     fn next(&mut self) -> Option<f64> {
         let t = self.i as f64 / self.sample_rate as f64;
-        self.i = self.i + 1;
+        self.i += 1;
         Some(self.waveform.call((t,)))
     }
 }
@@ -133,8 +134,8 @@ pub fn peak_normalize(samples: &[f64]) -> Vec<f64> {
 
 // This is really awful, is there a more elegant way to do this?
 // TODO: Make the instrument a parameter (perhaps using an Instrument trait?)
-pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
-    let song = midi::read_midi(filename).unwrap();
+pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Result<Vec<f64>, SynthrsError> {
+    let song = midi::read_midi(filename)?;;
     let length = (60.0 * song.max_time as f64) / (song.bpm * song.time_unit as f64);
 
     let mut notes_on_for_ticks: Vec<Vec<(u8, u8, usize)>> = Vec::new();
@@ -149,7 +150,7 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
             if event.event_type == midi::EventType::NoteOn {
                 let start_tick = event.time;
                 let note = event.value1;
-                let velocity = event.value2.unwrap();
+                let velocity = event.value2.unwrap_or(0);
 
                 let mut end_tick = song.max_time;
                 for j in i..track.events.len() {
@@ -178,7 +179,7 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
         if tick < notes_on_for_ticks.len() {
             for &(note, velocity, start_tick) in &notes_on_for_ticks[tick] {
                 let frequency = music::note_midi(440.0, note as usize);
-                let loudness = (6.908 * (velocity as f64 / 255.0)).exp() / 1000.0;
+                let loudness = (6.908 * (f64::from(velocity) / 255.0)).exp() / 1000.0;
                 let attack = 0.01;
                 let decay = 1.0;
                 let start_t = start_tick as f64 * 60.0 / song.bpm as f64 / song.time_unit as f64;
@@ -200,7 +201,7 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Vec<f64> {
         samples.push(midi_frequency_function(t));
     }
 
-    peak_normalize(&samples)
+    Ok(peak_normalize(&samples))
 }
 
 #[cfg(test)]
