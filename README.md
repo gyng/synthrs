@@ -16,6 +16,7 @@ Toy synthesiser library in Rust. Requires Rust nightly for now (ie. does not com
 
 #### Examples (loud)
 
+* [usage with cpal](https://github.com/gyng/midcat)
 * [busy signal](examples/assets/busysignal.ogg)
 * [bell](examples/assets/bell.ogg)
 * [mtnking-pure](examples/assets/mountainking-puresquare.ogg) *pure square wave*
@@ -65,6 +66,10 @@ Check out [`Cargo.toml`](Cargo.toml) for the full example list.
 * [`midi`](examples/midi.rs) synthesises a few MIDI files in `out/`
 
 This generates WAV or PCM files which can be opened in Audacity. Example MIDI files are public domain as far as I can tell.
+
+#### cpal
+
+[Example usage with cpal](https://github.com/gyng/midcat)
 
 ### Audacity PCM import settings
 
