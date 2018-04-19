@@ -35,7 +35,7 @@ use errors::SynthrsError;
 /// assert_eq!(quantize::<i8>(1.0f64), 127i8);
 /// assert_eq!(quantize::<f32>(0.0f64), 0.0f32);
 /// assert_eq!(quantize::<u8>(1.0f64), 127u8); // half of available quantization space of a u8 (255)
-/// assert_eq!(quantize::<u8>(-1.0f64), 129u8); // unexpected behaviour
+/// // quantize::<u8>(-1.0f64); // panics
 /// ```
 pub fn quantize<T>(input: f64) -> T
 where
