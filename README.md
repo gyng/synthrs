@@ -41,16 +41,24 @@ To write a custom tone to a WAV file
 extern crate synthrs;
 
 use synthrs::synthesizer::{ make_samples, quantize_samples };
-use synthrs::wave::SineWave;
+use synthrs::wave::sine_wave;
 use synthrs::writer::write_wav;
 
 fn main() {
-    write_wav("out/sin.wav", 44_100,
+    // Using a predefined generator
+    write_wav("out/sine.wav", 44_100,
         &quantize_samples::<i16>(
-            &make_samples(1.0, 44_100, SineWave(440.0))
+            &make_samples(1.0, 44_100, sine_wave(440.0))
         )
     ).expect("failed to write to file");
 
+    // `make_samples` takes in the duration, sample rate, and a generator closure.
+    // It returns an iterator which `quantize_samples` wraps around (setting the bit depth).
+    write_wav("out/sine_closure.wav", 44_100,
+        &quantize_samples::<i16>(
+            &make_samples(1.0, 44_100, |t| (t * 440.0 * 2.0 * 3.14159).sin())
+        )
+    ).expect("failed to write to file");
 }
 ```
 

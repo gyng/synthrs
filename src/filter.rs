@@ -6,11 +6,11 @@
 //! ```
 //! use synthrs::filter::{convolve, cutoff_from_frequency, lowpass_filter};
 //! use synthrs::synthesizer::{quantize_samples, make_samples};
-//! use synthrs::wave::SineWave;
+//! use synthrs::wave::sine_wave;
 //!
 //! // Generate a bunch of samples at two different frequencies
 //! let samples = make_samples(1.0, 44_100, |t: f64| -> f64 {
-//!     0.5 * (SineWave(6000.0)(t) + SineWave(80.0)(t))
+//!     0.5 * (sine_wave(6000.0)(t) + sine_wave(80.0)(t))
 //! });
 //!
 //! // Create a lowpass filter, using a cutoff of 400Hz at a 44_100Hz sample rate (ie. filter out frequencies >400Hz)

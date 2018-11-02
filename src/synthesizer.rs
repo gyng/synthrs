@@ -1,13 +1,13 @@
-//! The following code generates a 1s long, 16-bit, 440Hz sinewave at a 44100Hz sample rate.
+//! The following code generates a 1s long, 16-bit, 440Hz sine_wave at a 44100Hz sample rate.
 //! It then writes the generated samples into a 44100Hz WAV file at `out/sine.wav`.
 //!
 //! ```ignore
-//! use synthrs::wave::SineWave;
+//! use synthrs::wave::sine_wave;
 //! use synthrs::writer::write_wav;
 //! use synthrs::synthesizer::{quantize_samples, make_samples};
 //!
 //! write_wav("out/sine.wav", 44_100,
-//!     quantize_samples::<i16>(make_samples(1.0, 44_100, SineWave(440.0)))
+//!     quantize_samples::<i16>(make_samples(1.0, 44_100, sine_wave(440.0)))
 //! ).ok().expect("failed");
 //! ```
 //!
@@ -48,13 +48,13 @@ where
 
 /// Quantizes a `Vec<f64>` of samples into `Vec<T>`.
 ///
-/// This creates a 16-bit `SineWave` at 440Hz:
+/// This creates a 16-bit `sine_wave` at 440Hz:
 ///
 /// ```
-/// use synthrs::wave::SineWave;
+/// use synthrs::wave::sine_wave;
 /// use synthrs::synthesizer::{quantize_samples, make_samples};
 ///
-/// quantize_samples::<i16>(&make_samples(1.0, 44_100, SineWave(440.0)));
+/// quantize_samples::<i16>(&make_samples(1.0, 44_100, sine_wave(440.0)));
 /// ```
 pub fn quantize_samples<T>(input: &[f64]) -> Vec<T>
 where
@@ -90,9 +90,9 @@ where
 ///
 /// ```
 /// use synthrs::synthesizer::SamplesIter;
-/// use synthrs::wave::SineWave;
+/// use synthrs::wave::sine_wave;
 ///
-/// let mut sine_iter = SamplesIter::new(44_100, Box::new(SineWave(440.0)));
+/// let mut sine_iter = SamplesIter::new(44_100, Box::new(sine_wave(440.0)));
 /// let samples = sine_iter.take(44_100).collect::<Vec<f64>>(); // take 1 second of samples
 /// let _slice = samples.as_slice();
 /// ```
@@ -190,7 +190,7 @@ pub fn make_samples_from_midi(
                 let start_t = start_tick as f64 * 60.0 / song.bpm as f64 / song.time_unit as f64;
                 let relative_t = t - start_t;
                 out += loudness
-                    * wave::SquareWave(frequency)(t)
+                    * wave::square_wave(frequency)(t)
                     * filter::envelope(relative_t, attack, decay)
             }
         }
@@ -215,7 +215,7 @@ mod tests {
     use std::i8;
 
     use super::*;
-    use crate::wave::SineWave;
+    use crate::wave::sine_wave;
 
     #[test]
     fn it_peak_normalizes() {
@@ -239,7 +239,7 @@ mod tests {
 
     #[test]
     fn test_samples_iterator() {
-        let mut iter = SamplesIter::new(1, Box::new(SineWave(3.1415)));
+        let mut iter = SamplesIter::new(1, Box::new(sine_wave(3.1415)));
         assert_eq!(iter.next().unwrap(), 0.0);
         assert_eq!(iter.next().unwrap(), 0.7764865126870779);
         assert_eq!(iter.next().unwrap(), 0.9785809043254725);
@@ -247,7 +247,7 @@ mod tests {
 
     #[test]
     fn test_make_samples() {
-        let waveform = SineWave(3.1415);
+        let waveform = sine_wave(3.1415);
         let samples = make_samples(3.0, 1, waveform);
         assert_eq!(vec![0.0, 0.7764865126870779, 0.9785809043254725], samples);
     }

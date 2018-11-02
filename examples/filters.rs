@@ -7,13 +7,13 @@ use synthrs::filter::{
     lowpass_filter,
 };
 use synthrs::synthesizer::{make_samples, quantize_samples};
-use synthrs::wave::SineWave;
+use synthrs::wave::sine_wave;
 use synthrs::writer::write_wav;
 
 fn main() {
     // Lowpass/highpass filter convolution example
     let sample = make_samples(1.0, 44_100, |t: f64| -> f64 {
-        0.33 * (SineWave(6000.0)(t) + SineWave(700.0)(t) + SineWave(80.0)(t))
+        0.33 * (sine_wave(6000.0)(t) + sine_wave(700.0)(t) + sine_wave(80.0)(t))
     });
 
     let lowpass = lowpass_filter(cutoff_from_frequency(400.0, 44_100), 0.01);

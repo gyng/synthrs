@@ -4,7 +4,7 @@ use std::fmt;
 use std::io;
 
 #[allow(dead_code)]
-/// Re-exported `Result` for rcue errors
+/// Re-exported `Result` for synthrs errors
 pub type Result<T> = std::result::Result<T, SynthrsError>;
 
 #[allow(dead_code)]
