@@ -71,6 +71,13 @@ pub fn bell(frequency: f64, attack: f64, decay: f64) -> impl Fn(f64) -> f64 {
     }
 }
 
+pub fn organ(frequency: f64) -> impl Fn(f64) -> f64 {
+    move |t| {
+        let frequency_2 = (frequency / 2.0) * 3.0;
+        sine_wave(frequency)(t) + 0.2 * sine_wave(frequency_2)(t)
+    }
+}
+
 /// Bastardised and butchered generic Karplus-Strong synthesis.
 /// Try a Sawtooth, or even a Bell wave.
 ///

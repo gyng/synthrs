@@ -10,13 +10,14 @@ Toy synthesiser library in Rust. Requires Rust nightly for now (ie. does not com
 
 * Not too difficult syntax for writing your own tones (see examples)
 * Basic filters (low-pass, high-pass, band-pass, band-reject, attack/decay envelope)
-* Basic waveforms (sine, square, triangle, sawtooth, tangent, bastardised Karplus-Strong)
+* Basic waveforms (sine, square, triangle, sawtooth, tangent, bastardised Karplus-Strong, and more)
 * MIDI synthesis
 * PCM or WAV output
 
 #### Examples (loud)
 
 * [usage with cpal](https://github.com/gyng/midcat)
+* [midi-to-wav](https://github.com/gyng/midi-to-wav)
 * [busy signal](examples/assets/busysignal.ogg)
 * [bell](examples/assets/bell.ogg)
 * [mtnking-pure](examples/assets/mountainking-puresquare.ogg) *pure square wave*
@@ -78,6 +79,10 @@ This generates WAV or PCM files which can be opened in Audacity. Example MIDI fi
 #### cpal
 
 [Example usage with cpal](https://github.com/gyng/midcat)
+
+#### midi-to-wav
+
+[midi-to-wav, a simple cli to convert MIDI files to WAV](https://github.com/gyng/midi-to-wav)
 
 ### Audacity PCM import settings
 

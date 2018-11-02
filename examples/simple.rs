@@ -4,7 +4,7 @@ extern crate synthrs;
 
 use synthrs::synthesizer::{make_samples, peak_normalize, quantize_samples, SamplesIter};
 use synthrs::wave::{
-    bell, karplus_strong, noise, rising_linear, sawtooth_wave, sine_wave, square_wave,
+    bell, karplus_strong, noise, organ, rising_linear, sawtooth_wave, sine_wave, square_wave,
     tangent_wave, triangle_wave,
 };
 use synthrs::writer::{write_pcm, write_wav};
@@ -75,6 +75,12 @@ fn main() {
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, noise())),
     ).expect("failed");
 
+    write_wav(
+        "out/organ.wav",
+        44_100,
+        &quantize_samples::<i16>(&make_samples(1.0, 44_100, organ(440.0))),
+    ).expect("failed");
+
     // Custom function for tone generation, t is in seconds
     write_wav(
         "out/wolftone.wav",
@@ -114,6 +120,7 @@ fn main() {
         })),
     ).expect("failed");
 
+    // Karplus-Strong introduces decay to the waveform
     write_wav(
         "out/karplus_strong.wav",
         44_100,
@@ -121,6 +128,17 @@ fn main() {
             5.0,
             44_100,
             |t: f64| -> f64 { karplus_strong(sawtooth_wave(440.0), 0.01, 1.0, 0.9, 44_100.0)(t) },
+        ))),
+    ).expect("failed");
+
+    // Using an "organ" we get a nice-sounding chime
+    write_wav(
+        "out/karplus_strong_organ.wav",
+        44_100,
+        &quantize_samples::<i16>(&peak_normalize(&make_samples(
+            5.0,
+            44_100,
+            |t: f64| -> f64 { karplus_strong(organ(440.0), 0.01, 1.0, 0.9, 44_100.0)(t) },
         ))),
     ).expect("failed");
 
