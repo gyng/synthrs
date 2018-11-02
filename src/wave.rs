@@ -5,7 +5,7 @@
 
 use std::f64::consts::PI;
 
-use filter::envelope;
+use crate::filter::envelope;
 
 #[derive(Clone, Copy)]
 pub struct SineWave(pub f64);

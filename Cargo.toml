@@ -6,6 +6,7 @@ authors = [
     "ng.guoyou@gmail.com",
     "stacey.ell@gmail.com"
 ]
+edition = "2018"
 
 [dependencies]
 

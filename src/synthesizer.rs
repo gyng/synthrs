@@ -19,11 +19,11 @@ use std::mem::size_of;
 use num::traits::{Bounded, FromPrimitive, Num, Zero};
 use num::Float;
 
-use errors::SynthrsError;
-use filter;
-use midi;
-use music;
-use wave;
+use crate::errors::SynthrsError;
+use crate::filter;
+use crate::midi;
+use crate::music;
+use crate::wave;
 
 /// Quantizes a `f64` sample into `T`.
 /// Convert from [-1.0f64, 1.0] to take up full quantization range of type `T`.
@@ -215,7 +215,7 @@ mod tests {
     use std::i8;
 
     use super::*;
-    use wave::SineWave;
+    use crate::wave::SineWave;
 
     #[test]
     fn it_peak_normalizes() {
