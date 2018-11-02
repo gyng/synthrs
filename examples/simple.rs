@@ -2,9 +2,10 @@
 
 extern crate synthrs;
 
-use synthrs::synthesizer::{make_samples, quantize_samples, peak_normalize, SamplesIter};
-use synthrs::wave::{SineWave, SquareWave, SawtoothWave, TriangleWave, TangentWave, Bell,
-                    KarplusStrong, Noise};
+use synthrs::synthesizer::{make_samples, peak_normalize, quantize_samples, SamplesIter};
+use synthrs::wave::{
+    Bell, KarplusStrong, Noise, SawtoothWave, SineWave, SquareWave, TangentWave, TriangleWave,
+};
 use synthrs::writer::{write_pcm, write_wav};
 
 fn main() {
@@ -86,19 +87,19 @@ fn main() {
     write_wav(
         "out/bell.wav",
         44_100,
-        &quantize_samples::<i16>(&make_samples(
-            10.0,
-            44_100,
-            |t: f64| -> f64 { Bell(200.0, 0.003, 0.5)(t) },
-        )),
+        &quantize_samples::<i16>(&make_samples(10.0, 44_100, |t: f64| -> f64 {
+            Bell(200.0, 0.003, 0.5)(t)
+        })),
     ).expect("failed");
 
     write_wav(
         "out/karplusstrong.wav",
         44_100,
-        &quantize_samples::<i16>(&peak_normalize(&make_samples(5.0, 44_100, |t: f64| -> f64 {
-            KarplusStrong(SawtoothWave(440.0), 0.01, 1.0, 0.9, 44_100.0)(t)
-        }))),
+        &quantize_samples::<i16>(&peak_normalize(&make_samples(
+            5.0,
+            44_100,
+            |t: f64| -> f64 { KarplusStrong(SawtoothWave(440.0), 0.01, 1.0, 0.9, 44_100.0)(t) },
+        ))),
     ).expect("failed");
 
     write_wav(
@@ -139,8 +140,11 @@ fn main() {
             let tone_a3 = SineWave(220.0 / (1.0 + progress));
             let tone_a4 = SineWave(440.0 / (1.0 + progress));
             let tone_a5 = SineWave(880.0 / (1.0 + progress));
-            (tone_a2(t_mod) * (1.0 - progress) + tone_a5(t_mod) * progress + tone_a3(t_mod) +
-                 tone_a4(t_mod)) / 4.0
+            (tone_a2(t_mod) * (1.0 - progress)
+                + tone_a5(t_mod) * progress
+                + tone_a3(t_mod)
+                + tone_a4(t_mod))
+                / 4.0
         })),
     ).expect("failed");
 }

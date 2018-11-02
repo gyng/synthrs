@@ -24,6 +24,7 @@ pub fn write_pcm(filename: &str, samples: &[i16]) -> Result<()> {
 }
 
 // See: https://ccrma.stanford.edu/courses/422/projects/WaveFormat/
+#[rustfmt::skip]
 pub fn write_wav(filename: &str, sample_rate: usize, samples: &[i16]) -> Result<()> {
     let path = Path::new(filename);
     let mut f = OpenOptions::new()

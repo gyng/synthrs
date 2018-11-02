@@ -104,9 +104,9 @@ pub struct TangentWave(pub f64);
 impl Fn<(f64,)> for TangentWave {
     extern "rust-call" fn call(&self, (t,): (f64,)) -> f64 {
         let TangentWave(frequency) = *self;
-        (((t * frequency * PI) - 0.5).tan() / 4.0).max(-1.0).min(
-            1.0,
-        )
+        (((t * frequency * PI) - 0.5).tan() / 4.0)
+            .max(-1.0)
+            .min(1.0)
     }
 }
 impl FnMut<(f64,)> for TangentWave {
@@ -180,9 +180,9 @@ where
         // Pretend we have a delay feature in synthrs, manually unroll delay loops
         // Any given sample at any given time will have "imaginary past" loops in it
         (0..10usize).fold(0.0, |acc, i| {
-            acc +
-                wave.call((t - tick * i as f64,)) * envelope(t + tick * i as f64, attack, decay) *
-                    sharpness.powf(i as f64)
+            acc + wave.call((t - tick * i as f64,))
+                * envelope(t + tick * i as f64, attack, decay)
+                * sharpness.powf(i as f64)
         }) * envelope(t, attack, decay)
     }
 }

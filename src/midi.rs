@@ -1,6 +1,6 @@
 use std::cmp::max;
 use std::fs::File;
-use std::io::{BufReader, Error, ErrorKind, Result, Read, Seek, SeekFrom};
+use std::io::{BufReader, Error, ErrorKind, Read, Result, Seek, SeekFrom};
 use std::path::Path;
 use std::vec;
 
@@ -154,9 +154,10 @@ pub struct MidiEvent {
 impl MidiEvent {
     // NoteOn with velocity 0 == NoteOff
     pub fn is_note_terminating(self) -> bool {
-        (self.event_type == EventType::NoteOff) ||
-            (self.event_type == EventType::NoteOn && !self.value2.is_none() &&
-                 self.value2.unwrap_or(0) == 0)
+        (self.event_type == EventType::NoteOff)
+            || (self.event_type == EventType::NoteOn
+                && !self.value2.is_none()
+                && self.value2.unwrap_or(0) == 0)
     }
 }
 
@@ -243,9 +244,7 @@ where
                 self.reader.read_u8()? as usize,
                 Some(self.reader.read_u8()? as usize),
             ),
-            DataLength::System | DataLength::Unknown => {
-                panic!("this should not have happened")
-            }
+            DataLength::System | DataLength::Unknown => panic!("this should not have happened"),
         };
 
         Ok(MidiEvent {
@@ -276,18 +275,17 @@ where
                 )
             }
 
-            SystemEventType::TuneRequest |
-            SystemEventType::TimingClock |
-            SystemEventType::TimeCodeQuaterFrame |
-            SystemEventType::Start |
-            SystemEventType::Continue |
-            SystemEventType::Stop |
-            SystemEventType::ActiveSensing => {
+            SystemEventType::TuneRequest
+            | SystemEventType::TimingClock
+            | SystemEventType::TimeCodeQuaterFrame
+            | SystemEventType::Start
+            | SystemEventType::Continue
+            | SystemEventType::Stop
+            | SystemEventType::ActiveSensing => {
                 // Unhandled, these have no data bytes
             }
 
-            SystemEventType::SongPositionPointer |
-            SystemEventType::SongSelect => {
+            SystemEventType::SongPositionPointer | SystemEventType::SongSelect => {
                 // Unhandled, these have two data bytes
                 try_opt!(self.reader.seek(SeekFrom::Current(2)));
             }
@@ -321,8 +319,8 @@ where
                 let tempo_byte3 = try_opt!(self.reader.read_u8()) as usize;
                 // Casting to usize below is done to kill shift overflow errors
                 // Somehow, it works...
-                let tempo = (tempo_byte1 << 16) as usize + (tempo_byte2 << 8) as usize +
-                    tempo_byte3;
+                let tempo =
+                    (tempo_byte1 << 16) as usize + (tempo_byte2 << 8) as usize + tempo_byte3;
 
                 return Some(Ok(MidiEvent {
                     event_type: self.running_status.unwrap_or(EventType::Unknown),
@@ -392,14 +390,13 @@ where
 
     fn get_event_length(&self, event_type: EventType) -> DataLength {
         match event_type {
-            EventType::NoteOff |
-            EventType::NoteOn |
-            EventType::PolyponicKeyPressure |
-            EventType::ControlChange |
-            EventType::PitchBendChange => DataLength::Double,
+            EventType::NoteOff
+            | EventType::NoteOn
+            | EventType::PolyponicKeyPressure
+            | EventType::ControlChange
+            | EventType::PitchBendChange => DataLength::Double,
 
-            EventType::ProgramChange |
-            EventType::ChannelPressure => DataLength::Single,
+            EventType::ProgramChange | EventType::ChannelPressure => DataLength::Single,
 
             EventType::System => DataLength::System,
 
@@ -428,8 +425,9 @@ where
             }
 
             match self.get_event_length(self.running_status.unwrap()) {
-                length @ DataLength::Single |
-                length @ DataLength::Double => return Some(self.read_data_event(length)),
+                length @ DataLength::Single | length @ DataLength::Double => {
+                    return Some(self.read_data_event(length))
+                }
                 DataLength::System => {
                     if let Some(system_event) = self.read_system_event() {
                         return Some(system_event);
@@ -460,9 +458,10 @@ pub fn read_midi<P: AsRef<Path>>(path: P) -> Result<MidiSong> {
         song.tracks.push(read_midi_track(&mut reader)?);
     }
 
-    song.max_time = song.tracks.iter().fold(0usize, |acc, track| {
-        max(acc, track.max_time)
-    });
+    song.max_time = song
+        .tracks
+        .iter()
+        .fold(0usize, |acc, track| max(acc, track.max_time));
 
     // Guess song tempo (only take the first tempo change event)
     // This means tempo changes in-song are not supported
@@ -553,26 +552,26 @@ mod tests {
 
     #[test]
     fn it_parses_a_midi_file_with_multiple_tracks() {
-        let song = read_midi("tests/assets/multitrack.mid").ok().expect(
-            "failed",
-        );
+        let song = read_midi("tests/assets/multitrack.mid")
+            .ok()
+            .expect("failed");
         assert_eq!(song.tracks.len(), 3);
     }
 
     #[test]
     fn it_parses_a_midi_file_with_running_status() {
-        let song = read_midi("tests/assets/running_status.mid").ok().expect(
-            "failed",
-        );
+        let song = read_midi("tests/assets/running_status.mid")
+            .ok()
+            .expect("failed");
         assert_eq!(song.tracks.len(), 1);
         assert_eq!(song.max_time, 5640);
     }
 
     #[test]
     fn it_parses_the_bpm_of_a_midi_file() {
-        let song = read_midi("tests/assets/running_status.mid").ok().expect(
-            "failed",
-        );
+        let song = read_midi("tests/assets/running_status.mid")
+            .ok()
+            .expect("failed");
         assert_eq!(song.bpm as usize, 160);
     }
 }

@@ -2,12 +2,13 @@
 
 extern crate synthrs;
 
+use synthrs::filter::{
+    bandpass_filter, bandreject_filter, convolve, cutoff_from_frequency, highpass_filter,
+    lowpass_filter,
+};
 use synthrs::synthesizer::{make_samples, quantize_samples};
-use synthrs::filter::{convolve, cutoff_from_frequency, lowpass_filter, highpass_filter,
-                      bandpass_filter, bandreject_filter};
 use synthrs::wave::SineWave;
 use synthrs::writer::write_wav;
-
 
 fn main() {
     // Lowpass/highpass filter convolution example
@@ -40,10 +41,7 @@ fn main() {
         0.01,
     );
     let mut bandreject_samples = quantize_samples::<i16>(&sample);
-    bandreject_samples.extend_from_slice(
-        &*quantize_samples::<i16>(
-            &convolve(&bandreject, &sample),
-        ),
-    );
+    bandreject_samples
+        .extend_from_slice(&*quantize_samples::<i16>(&convolve(&bandreject, &sample)));
     write_wav("out/bandreject.wav", 44_100, &bandreject_samples).expect("failed");
 }

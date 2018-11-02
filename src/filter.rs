@@ -64,10 +64,9 @@ pub fn lowpass_filter(cutoff: f64, band: f64) -> Vec<f64> {
 pub fn blackman_window(size: usize) -> Vec<f64> {
     (0..size)
         .map(|i| {
-            0.42 - 0.5 * (2.0 * PI * i as f64 / (size as f64 - 1.0)).cos() +
-                0.08 * (4.0 * PI * i as f64 / (size as f64 - 1.0)).cos()
-        })
-        .collect()
+            0.42 - 0.5 * (2.0 * PI * i as f64 / (size as f64 - 1.0)).cos()
+                + 0.08 * (4.0 * PI * i as f64 / (size as f64 - 1.0)).cos()
+        }).collect()
 }
 
 /// Creates a high-pass filter. Frequencies above the cutoff are preserved when
@@ -106,8 +105,7 @@ pub fn spectral_invert(filter: &[f64]) -> Vec<f64> {
             let add = if count == filter.len() / 2 { 1.0 } else { 0.0 };
             count += 1;
             -el + add
-        })
-        .collect()
+        }).collect()
 }
 
 pub fn convolve(filter: &[f64], input: &[f64]) -> Vec<f64> {

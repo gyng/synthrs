@@ -44,9 +44,10 @@ fn main() {
         44_100,
         &quantize_samples::<i16>(&make_samples(15.0, 44_100, |t: f64| -> f64 {
             if t % 0.2 < 0.1 {
-                0.25 *
-                    (SineWave(1400.0)(t) + SineWave(2060.0)(t) + SineWave(2450.0)(t) +
-                         SineWave(2600.0)(t))
+                0.25 * (SineWave(1400.0)(t)
+                    + SineWave(2060.0)(t)
+                    + SineWave(2450.0)(t)
+                    + SineWave(2600.0)(t))
             } else {
                 0.0
             }
