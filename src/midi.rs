@@ -117,6 +117,7 @@ impl MetaEventType {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct MidiSong {
     pub max_time: usize,
     pub time_unit: isize,
@@ -125,6 +126,7 @@ pub struct MidiSong {
     pub bpm: f64,
 }
 
+#[derive(Clone, Debug)]
 pub struct MidiTrack {
     pub events: Vec<MidiEvent>,
     pub max_time: usize,

@@ -1,14 +1,16 @@
-//! The following code generates a 1s long, 16-bit, 440Hz sine_wave at a 44100Hz sample rate.
+//! The following code generates a 0.1s long, 16-bit, 440Hz sine_wave at a 44100Hz sample rate.
 //! It then writes the generated samples into a 44100Hz WAV file at `out/sine.wav`.
 //!
-//! ```ignore
+//! ```
 //! use synthrs::wave::sine_wave;
 //! use synthrs::writer::write_wav;
 //! use synthrs::synthesizer::{quantize_samples, make_samples};
 //!
-//! write_wav("out/sine.wav", 44_100,
-//!     quantize_samples::<i16>(make_samples(1.0, 44_100, sine_wave(440.0)))
-//! ).ok().expect("failed");
+//! write_wav(
+//!     "out/sine.wav",
+//!     44_100,
+//!     &quantize_samples::<i16>(&make_samples(0.1, 44_100, sine_wave(440.0))),
+//! ).expect("failed to write wav");
 //! ```
 //!
 //! See: `examples/simple.rs`
@@ -23,7 +25,6 @@ use crate::errors::SynthrsError;
 use crate::filter;
 use crate::midi;
 use crate::music;
-use crate::wave;
 
 /// Quantizes a `f64` sample into `T`.
 /// Convert from [-1.0f64, 1.0] to take up full quantization range of type `T`.
@@ -64,6 +65,13 @@ where
 }
 
 /// Invokes the waveform function `f` at time `t` to return the amplitude at that time.
+///
+/// ```
+/// use synthrs::synthesizer::generate;
+/// use synthrs::wave::sine_wave;
+///
+/// let output = generate(1.0, &sine_wave(440.0));
+/// ```
 pub fn generate<F>(t: f64, f: &F) -> f64
 where
     F: Fn(f64) -> f64,
@@ -71,6 +79,21 @@ where
     f.call((t,))
 }
 
+/// Given a generator waveform, returns a `Vec<f64>` of raw samples (not normalised or quantised)
+///
+/// `length` is in seconds
+/// `sample_rate` is in hertz (eg `44_100`)
+///
+/// ```
+/// use synthrs::synthesizer::make_samples;
+/// use synthrs::wave;
+///
+/// let sine = make_samples(0.1, 44_100, |t| {
+///     (t * 440.0 * 2.0 * 3.14159).sin()
+/// });
+///
+/// let square = make_samples(0.1, 44_100, wave::square_wave(440.0));
+/// ```
 pub fn make_samples<F>(length: f64, sample_rate: usize, waveform: F) -> Vec<f64>
 where
     F: Fn(f64) -> f64,
@@ -125,6 +148,14 @@ impl Iterator for SamplesIter {
 
 /// Peak normalizes a `Vec<f64>` of samples such that the maximum and minimum amplitudes of the
 /// `Vec<f64>` samples are within the range [-1.0, 1.0]
+///
+/// ```
+/// use synthrs::synthesizer::{make_samples, peak_normalize};
+/// use synthrs::wave;
+///
+/// let samples = make_samples(0.1, 44_100, wave::sine_wave(440.0));
+/// let normalized = peak_normalize(&samples);
+/// ```
 pub fn peak_normalize(samples: &[f64]) -> Vec<f64> {
     let peak = samples
         .iter()
@@ -134,12 +165,70 @@ pub fn peak_normalize(samples: &[f64]) -> Vec<f64> {
 }
 
 // This is really awful, is there a more elegant way to do this?
-// TODO: Make the instrument a parameter (perhaps using an Instrument trait?)
-pub fn make_samples_from_midi(
+/// Generates samples from a MIDI file
+///
+/// ```
+/// use synthrs::synthesizer::make_samples_from_midi_file;
+/// use synthrs::wave;
+///
+/// let samples = make_samples_from_midi_file(
+///     wave::sine_wave,
+///     44_100,
+///     false,
+///     "tests/assets/test.mid",
+/// ).unwrap();
+/// ```
+pub fn make_samples_from_midi_file<F1, F2>(
+    instrument: F1,
     sample_rate: usize,
-    filename: &str,
-) -> Result<Vec<f64>, SynthrsError> {
-    let song = midi::read_midi(filename)?;;
+    use_envelope: bool,
+    path: &str,
+) -> Result<Vec<f64>, SynthrsError>
+where
+    F1: Fn(f64) -> F2,
+    F2: Fn(f64) -> f64,
+{
+    let song = midi::read_midi(path)?;
+    make_samples_from_midi(instrument, sample_rate, use_envelope, song)
+}
+
+// This is really awful, is there a more elegant way to do this?
+/// Generates samples from a MIDI file. Supports only one instrument. Instrument can be any generator.
+///
+/// `instrument` is the waveform generator
+/// `use_envelope` decide whether to use a basic attack/decay envelope when generating samples
+///
+/// ```
+/// use synthrs::synthesizer::make_samples_from_midi;
+/// use synthrs::midi;
+/// use synthrs::wave;
+///
+/// let song = midi::read_midi("tests/assets/test.mid").unwrap();
+///
+/// let samples = make_samples_from_midi(
+///     |frequency: f64| wave::bell(frequency, 0.003, 0.5),
+///     44_100,
+///     false,
+///     song.clone(),
+/// ).unwrap();
+///
+/// let samples = make_samples_from_midi(
+///     wave::sine_wave,
+///     44_100,
+///     true,
+///     song.clone(),
+/// ).unwrap();
+/// ```
+pub fn make_samples_from_midi<F1, F2>(
+    instrument: F1,
+    sample_rate: usize,
+    use_envelope: bool,
+    song: midi::MidiSong,
+) -> Result<Vec<f64>, SynthrsError>
+where
+    F1: Fn(f64) -> F2,
+    F2: Fn(f64) -> f64,
+{
     let length = (60.0 * song.max_time as f64) / (song.bpm * song.time_unit as f64);
 
     let mut notes_on_for_ticks: Vec<Vec<(u8, u8, usize)>> = Vec::new();
@@ -184,14 +273,17 @@ pub fn make_samples_from_midi(
         if tick < notes_on_for_ticks.len() {
             for &(note, velocity, start_tick) in &notes_on_for_ticks[tick] {
                 let frequency = music::note_midi(440.0, note as usize);
+                // TODO: split loudness into a util module
                 let loudness = (6.908 * (f64::from(velocity) / 255.0)).exp() / 1000.0;
+                out += loudness * (instrument)(frequency)(t);
+
+                let start_t = start_tick as f64 * 60.0 / song.bpm as f64 / song.time_unit as f64;
                 let attack = 0.01;
                 let decay = 1.0;
-                let start_t = start_tick as f64 * 60.0 / song.bpm as f64 / song.time_unit as f64;
                 let relative_t = t - start_t;
-                out += loudness
-                    * wave::square_wave(frequency)(t)
-                    * filter::envelope(relative_t, attack, decay)
+                if use_envelope {
+                    out *= filter::envelope(relative_t, attack, decay)
+                }
             }
         }
 
