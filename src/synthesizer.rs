@@ -13,17 +13,17 @@
 //!
 //! See: `examples/simple.rs`
 
-use std::mem::size_of;
 use std::iter::Iterator;
+use std::mem::size_of;
 
+use num::traits::{Bounded, FromPrimitive, Num, Zero};
 use num::Float;
-use num::traits::{Bounded, FromPrimitive, Num};
 
-use filter;
-use music;
-use midi;
-use wave;
 use errors::SynthrsError;
+use filter;
+use midi;
+use music;
+use wave;
 
 /// Quantizes a `f64` sample into `T`.
 /// Convert from [-1.0f64, 1.0] to take up full quantization range of type `T`.
@@ -39,10 +39,11 @@ use errors::SynthrsError;
 /// ```
 pub fn quantize<T>(input: f64) -> T
 where
-    T: Num + FromPrimitive + Bounded,
+    T: Num + FromPrimitive + Bounded + Zero,
 {
     let quantization_levels = 2.0.powf(size_of::<T>() as f64 * 8.0) - 1.0;
-    T::from_f64(input * (quantization_levels / 2.0)).expect("failed to quantize to given type")
+    // defaults to 0 on quantization failure for whatever reason
+    T::from_f64(input * (quantization_levels / 2.0)).unwrap_or(T::zero())
 }
 
 /// Quantizes a `Vec<f64>` of samples into `Vec<T>`.
@@ -57,7 +58,7 @@ where
 /// ```
 pub fn quantize_samples<T>(input: &[f64]) -> Vec<T>
 where
-    T: Num + FromPrimitive + Bounded,
+    T: Num + FromPrimitive + Bounded + Zero,
 {
     input.iter().map(|s| quantize::<T>(*s)).collect()
 }
@@ -125,16 +126,19 @@ impl Iterator for SamplesIter {
 /// Peak normalizes a `Vec<f64>` of samples such that the maximum and minimum amplitudes of the
 /// `Vec<f64>` samples are within the range [-1.0, 1.0]
 pub fn peak_normalize(samples: &[f64]) -> Vec<f64> {
-    let peak = samples.iter().fold(0.0f64, |acc, &sample| {
-        acc.max(sample).max(-sample)
-    });
+    let peak = samples
+        .iter()
+        .fold(0.0f64, |acc, &sample| acc.max(sample).max(-sample));
 
     samples.iter().map(|&sample| sample / peak).collect()
 }
 
 // This is really awful, is there a more elegant way to do this?
 // TODO: Make the instrument a parameter (perhaps using an Instrument trait?)
-pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Result<Vec<f64>, SynthrsError> {
+pub fn make_samples_from_midi(
+    sample_rate: usize,
+    filename: &str,
+) -> Result<Vec<f64>, SynthrsError> {
     let song = midi::read_midi(filename)?;;
     let length = (60.0 * song.max_time as f64) / (song.bpm * song.time_unit as f64);
 
@@ -162,9 +166,10 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Result<Vec<
                     }
                 }
 
-                for on_notes in notes_on_for_ticks.iter_mut().take(end_tick).skip(
-                    start_tick,
-                )
+                for on_notes in notes_on_for_ticks
+                    .iter_mut()
+                    .take(end_tick)
+                    .skip(start_tick)
                 {
                     on_notes.push((note as u8, velocity as u8, start_tick));
                 }
@@ -184,9 +189,9 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Result<Vec<
                 let decay = 1.0;
                 let start_t = start_tick as f64 * 60.0 / song.bpm as f64 / song.time_unit as f64;
                 let relative_t = t - start_t;
-                out += loudness * wave::SquareWave(frequency)(t) *
-                    filter::envelope(relative_t, attack, decay)
-
+                out += loudness
+                    * wave::SquareWave(frequency)(t)
+                    * filter::envelope(relative_t, attack, decay)
             }
         }
 
@@ -206,8 +211,8 @@ pub fn make_samples_from_midi(sample_rate: usize, filename: &str) -> Result<Vec<
 
 #[cfg(test)]
 mod tests {
-    use std::i8;
     use std::i16;
+    use std::i8;
 
     use super::*;
     use wave::SineWave;
