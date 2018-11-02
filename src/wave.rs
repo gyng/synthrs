@@ -5,9 +5,6 @@
 
 use std::f64::consts::PI;
 
-use rand;
-use rand::Rng;
-
 use filter::envelope;
 
 #[derive(Clone, Copy)]
@@ -212,7 +209,7 @@ pub struct Noise;
 
 impl Fn<(f64,)> for Noise {
     extern "rust-call" fn call(&self, (_t,): (f64,)) -> f64 {
-        rand::thread_rng().next_f64()
+        rand::random::<f64>()
     }
 }
 impl FnMut<(f64,)> for Noise {
