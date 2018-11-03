@@ -58,7 +58,9 @@ fn main() {
         44_100,
         &quantize_samples::<i16>(
             &make_samples_from_midi_file(
-                wave::sine_wave,
+                |frequency: f64| {
+                    wave::karplus_strong(wave::sawtooth_wave(frequency), 0.01, 1.0, 0.9, 44_100.0)
+                },
                 44_100,
                 true,
                 "examples/assets/seikilos.mid",

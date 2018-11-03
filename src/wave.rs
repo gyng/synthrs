@@ -103,9 +103,9 @@ pub fn karplus_strong<F: Fn(f64) -> f64>(
         // Any given sample at any given time will have "imaginary past" loops in it
         (0..10usize).fold(0.0, |acc, i| {
             acc + generator(t - tick * i as f64)
-                * envelope(t + tick * i as f64, attack, decay)
+                * envelope(tick * i as f64, attack, decay)
                 * sharpness.powf(i as f64)
-        }) * envelope(t, attack, decay)
+        })
     }
 }
 
