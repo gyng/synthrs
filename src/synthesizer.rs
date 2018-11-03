@@ -231,9 +231,9 @@ where
 {
     let length = (60.0 * song.max_time as f64) / (song.bpm * song.time_unit as f64);
 
-    let mut notes_on_for_ticks: Vec<Vec<(u8, u8, usize)>> = Vec::new();
+    let mut notes_on_for_ticks: Vec<Vec<(u8, u8, usize, usize, usize)>> = Vec::new();
     for _ in 0..song.max_time {
-        let notes_on_for_tick: Vec<(u8, u8, usize)> = Vec::new();
+        let notes_on_for_tick: Vec<(u8, u8, usize, usize, usize)> = Vec::new();
         notes_on_for_ticks.push(notes_on_for_tick);
     }
 
@@ -255,12 +255,14 @@ where
                     }
                 }
 
-                for on_notes in notes_on_for_ticks
+                for (i, on_notes) in notes_on_for_ticks
                     .iter_mut()
+                    .enumerate()
                     .take(end_tick)
                     .skip(start_tick)
                 {
-                    on_notes.push((note as u8, velocity as u8, start_tick));
+                    let ticks_left = end_tick - i;
+                    on_notes.push((note as u8, velocity as u8, start_tick, i, ticks_left));
                 }
             }
         }
@@ -271,18 +273,36 @@ where
         let mut out = 0.0;
 
         if tick < notes_on_for_ticks.len() {
-            for &(note, velocity, start_tick) in &notes_on_for_ticks[tick] {
+            for &(note, velocity, start_tick, _ticks_elasped, _ticks_left) in
+                &notes_on_for_ticks[tick]
+            {
                 let frequency = music::note_midi(440.0, note as usize);
                 // TODO: split loudness into a util module
                 let loudness = (6.908 * (f64::from(velocity) / 255.0)).exp() / 1000.0;
                 out += loudness * (instrument)(frequency)(t);
 
-                let start_t = start_tick as f64 * 60.0 / song.bpm as f64 / song.time_unit as f64;
-                let attack = 0.01;
-                let decay = 1.0;
-                let relative_t = t - start_t;
                 if use_envelope {
-                    out *= filter::envelope(relative_t, attack, decay)
+                    let start_t =
+                        start_tick as f64 * 60.0 / song.bpm as f64 / song.time_unit as f64;
+
+                    // TODO: make this an option
+                    let attack = 0.01;
+                    let decay = 1.0;
+                    let relative_t = t - start_t;
+                    out *= filter::envelope(relative_t, attack, decay);
+
+                    // TODO: make this an option, since it's awful for sine wave
+                    // // Reduce clicks when changing notes
+                    // // Ideally phase shift, but this is a simple solution
+                    // let fade_ticks = 20;
+
+                    // if ticks_elasped < fade_ticks {
+                    //     let ratio = ticks_elasped as f64 / fade_ticks as f64;
+                    //     out *= ratio * ratio;
+                    // } else if ticks_left < fade_ticks {
+                    //     let ratio = ticks_left as f64 / fade_ticks as f64;
+                    //     out *= ratio * ratio;
+                    // }
                 }
             }
         }

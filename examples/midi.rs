@@ -17,7 +17,7 @@ fn main() {
         44_100,
         &quantize_samples::<i16>(
             &make_samples_from_midi_file(
-                wave::sine_wave,
+                wave::square_wave,
                 44_100,
                 true,
                 "examples/assets/octave.mid",
@@ -47,7 +47,7 @@ fn main() {
         "out/octave_no_envelope.wav",
         44_100,
         &quantize_samples::<i16>(
-            &make_samples_from_midi(wave::sine_wave, 44_100, false, song).unwrap(),
+            &make_samples_from_midi(wave::square_wave, 44_100, false, song).unwrap(),
         ),
     ).expect("failed");
 
@@ -88,7 +88,7 @@ fn main() {
         44_100,
         &quantize_samples::<i16>(
             &make_samples_from_midi_file(
-                wave::sine_wave,
+                wave::square_wave,
                 44_100,
                 true,
                 "examples/assets/mountainking.mid",
@@ -102,7 +102,7 @@ fn main() {
         44_100,
         &quantize_samples::<i16>(
             &make_samples_from_midi_file(
-                wave::sine_wave,
+                wave::square_wave,
                 44_100,
                 true,
                 "examples/assets/rustle.mid",
