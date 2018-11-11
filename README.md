@@ -14,10 +14,13 @@ Toy synthesiser library in Rust. Requires Rust nightly for now (ie. does not com
 * MIDI synthesis
 * PCM or WAV output
 
-#### Examples (loud)
+#### Integrations
 
 * [usage with cpal](https://github.com/gyng/midcat)
 * [midi-to-wav](https://github.com/gyng/midi-to-wav)
+* [wasm, web synthesis](https://gyng.github.io/synthrs-wasm-ts/#/)
+
+#### Examples (loud)
 * [busy signal](examples/assets/busysignal.ogg)
 * [bell](examples/assets/bell.ogg)
 * [mtnking-pure](examples/assets/mountainking-puresquare.ogg) *pure square wave*
@@ -83,6 +86,11 @@ This generates WAV or PCM files which can be opened in Audacity. Example MIDI fi
 #### midi-to-wav
 
 [midi-to-wav, a simple cli to convert MIDI files to WAV](https://github.com/gyng/midi-to-wav)
+
+#### wasm
+
+* [synthrs-wasm-ts](https://github.com/gyng/synthrs-wasm-ts)
+* [demo](https://gyng.github.io/synthrs-wasm-ts)
 
 ### Audacity PCM import settings
 
