@@ -42,7 +42,7 @@ fn main() {
     // Manually parse and synthesise MIDI files
     // The `make_samples_from_midi` function works on an already-parsed MIDI file
     // `read_midi` does the file reading and parsing
-    let song = midi::read_midi("examples/assets/octave.mid").unwrap();
+    let song = midi::read_midi_file("examples/assets/octave.mid").unwrap();
     write_wav(
         "out/octave_no_envelope.wav",
         44_100,

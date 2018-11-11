@@ -188,7 +188,7 @@ where
     F1: Fn(f64) -> F2,
     F2: Fn(f64) -> f64,
 {
-    let song = midi::read_midi(path)?;
+    let song = midi::read_midi_file(path)?;
     make_samples_from_midi(instrument, sample_rate, use_envelope, song)
 }
 
@@ -203,7 +203,7 @@ where
 /// use synthrs::midi;
 /// use synthrs::wave;
 ///
-/// let song = midi::read_midi("tests/assets/test.mid").unwrap();
+/// let song = midi::read_midi_file("tests/assets/test.mid").unwrap();
 ///
 /// let samples = make_samples_from_midi(
 ///     |frequency: f64| wave::bell(frequency, 0.003, 0.5),

@@ -447,13 +447,52 @@ where
     }
 }
 
-/// Reads from a MIDI file into a `Result<MidiSong>`.
-pub fn read_midi<P: AsRef<Path>>(path: P) -> Result<MidiSong> {
-    let file = match File::open(path) {
-        Ok(f) => f,
-        Err(err) => return Err(err),
-    };
+/// Convenience method for parsing a `Result<MidiSong>` from a filepath.
+/// ```
+/// use synthrs::midi::read_midi_file;
+///
+/// let song = read_midi_file("tests/assets/test.mid");
+/// ```
+pub fn read_midi_file<P: AsRef<Path>>(path: P) -> Result<MidiSong> {
+    let file = File::open(path)?;
     let mut reader = BufReader::new(file);
+
+    read_midi(&mut reader)
+}
+
+/// Parses a Read + Seek into a `Result<MidiSong>`.
+///
+/// From a file
+/// ```
+/// use synthrs::midi::read_midi;
+/// use std::fs::File;
+/// use std::io::BufReader;
+///
+/// let file = File::open("tests/assets/test.mid").unwrap();
+/// let mut reader = BufReader::new(file);
+/// let song = read_midi(&mut reader);
+/// ```
+///
+/// From a `&[u8]`
+/// ```
+/// #![feature(bufreader_buffer)]
+/// use synthrs::midi::read_midi;
+/// use std::fs::File;
+/// use std::io::{Cursor, Seek, BufReader, Read};
+///
+/// // Boilerplate for grabbing a legit MIDI &[u8]
+/// let file = File::open("tests/assets/test.mid").unwrap();
+/// let mut reader = BufReader::new(file);
+/// let mut buf = reader.buffer();
+///
+/// // Wrap our &[u8] in a Read+Seek
+/// let mut cursor = Cursor::new(buf);
+/// let song = read_midi(&mut cursor);
+/// ```
+pub fn read_midi<T>(mut reader: &mut T) -> Result<MidiSong>
+where
+    T: Read + Seek,
+{
     let mut song = read_midi_header(&mut reader)?;
 
     for _ in 0usize..song.track_count {
@@ -525,7 +564,9 @@ mod tests {
 
     #[test]
     fn it_parses_a_midi_file() {
-        let song = read_midi("tests/assets/test.mid").ok().expect("failed");
+        let song = read_midi_file("tests/assets/test.mid")
+            .ok()
+            .expect("failed");
 
         assert_eq!(song.tracks.len(), 2); // metadata track included
         let ref messages = song.tracks[1].events;
@@ -554,7 +595,7 @@ mod tests {
 
     #[test]
     fn it_parses_a_midi_file_with_multiple_tracks() {
-        let song = read_midi("tests/assets/multitrack.mid")
+        let song = read_midi_file("tests/assets/multitrack.mid")
             .ok()
             .expect("failed");
         assert_eq!(song.tracks.len(), 3);
@@ -562,7 +603,7 @@ mod tests {
 
     #[test]
     fn it_parses_a_midi_file_with_running_status() {
-        let song = read_midi("tests/assets/running_status.mid")
+        let song = read_midi_file("tests/assets/running_status.mid")
             .ok()
             .expect("failed");
         assert_eq!(song.tracks.len(), 1);
@@ -571,7 +612,7 @@ mod tests {
 
     #[test]
     fn it_parses_the_bpm_of_a_midi_file() {
-        let song = read_midi("tests/assets/running_status.mid")
+        let song = read_midi_file("tests/assets/running_status.mid")
             .ok()
             .expect("failed");
         assert_eq!(song.bpm as usize, 160);
