@@ -7,7 +7,7 @@ use synthrs::wave::{
     bell, karplus_strong, noise, organ, rising_linear, sawtooth_wave, sine_wave, square_wave,
     tangent_wave, triangle_wave,
 };
-use synthrs::writer::{write_pcm, write_wav};
+use synthrs::writer::{write_pcm_file, write_wav_file};
 
 fn main() {
     // This creates a sine wave for 1.0s at 44_100Hz
@@ -16,20 +16,20 @@ fn main() {
     //    from 0.0 to 1.0 seconds at a 44_100Hz sample rate
     // 2. `quantize_samples::<i16>` quantizes the floating-point samples as a signed 16-bit int
     // 3. `write_pcm` writes the samples to a PCM file
-    write_pcm(
+    write_pcm_file(
         "out/sine.pcm",
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, sine_wave(440.0))),
     ).expect("failed");
 
     // Write to a WAV file
-    write_wav(
+    write_wav_file(
         "out/sine.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, sine_wave(440.0))),
     ).expect("failed");
 
     // `make_samples` takes in an Fn closure of type `|t: f64| -> f64`, where `t` = seconds
-    write_wav(
+    write_wav_file(
         "out/sine_closure.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, |t| {
@@ -39,50 +39,50 @@ fn main() {
 
     // `quantize_samples` takes in an interator, which the `make_samples` function returns
     let sine_iter = SamplesIter::new(44_100, Box::new(sine_wave(440.0)));
-    write_wav(
+    write_wav_file(
         "out/sine_iter.wav",
         44_100,
         &quantize_samples::<i16>(sine_iter.take(44_100).collect::<Vec<f64>>().as_slice()),
     ).expect("failed");
 
-    write_wav(
+    write_wav_file(
         "out/square.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, square_wave(440.0))),
     ).expect("failed");
 
-    write_wav(
+    write_wav_file(
         "out/sawtooth.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, sawtooth_wave(440.0))),
     ).expect("failed");
 
-    write_wav(
+    write_wav_file(
         "out/triangle.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, triangle_wave(440.0))),
     ).expect("failed");
 
-    write_wav(
+    write_wav_file(
         "out/tangent.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, tangent_wave(440.0))),
     ).expect("failed");
 
-    write_wav(
+    write_wav_file(
         "out/noise.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, noise())),
     ).expect("failed");
 
-    write_wav(
+    write_wav_file(
         "out/organ.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, organ(440.0))),
     ).expect("failed");
 
     // Custom function for tone generation, t is in seconds
-    write_wav(
+    write_wav_file(
         "out/wolftone.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, |t: f64| -> f64 {
@@ -90,7 +90,7 @@ fn main() {
         })),
     ).expect("failed");
 
-    write_wav(
+    write_wav_file(
         "out/rising.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, |t: f64| -> f64 {
@@ -102,7 +102,7 @@ fn main() {
         })),
     ).expect("failed");
 
-    write_wav(
+    write_wav_file(
         "out/rising_wub.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(
@@ -112,7 +112,7 @@ fn main() {
         )),
     ).expect("failed");
 
-    write_wav(
+    write_wav_file(
         "out/bell.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(10.0, 44_100, |t: f64| -> f64 {
@@ -121,7 +121,7 @@ fn main() {
     ).expect("failed");
 
     // Karplus-Strong introduces decay to the waveform
-    write_wav(
+    write_wav_file(
         "out/karplus_strong.wav",
         44_100,
         &quantize_samples::<i16>(&peak_normalize(&make_samples(
@@ -132,7 +132,7 @@ fn main() {
     ).expect("failed");
 
     // Using an "organ" we get a nice-sounding chime
-    write_wav(
+    write_wav_file(
         "out/karplus_strong_organ.wav",
         44_100,
         &quantize_samples::<i16>(&peak_normalize(&make_samples(
@@ -142,7 +142,7 @@ fn main() {
         ))),
     ).expect("failed");
 
-    write_wav(
+    write_wav_file(
         "out/racecar.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(15.0, 44_100, |t: f64| -> f64 {
@@ -169,7 +169,7 @@ fn main() {
         })),
     ).expect("failed");
 
-    write_wav(
+    write_wav_file(
         "out/shepard.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(30.0, 44_100, |t: f64| -> f64 {

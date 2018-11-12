@@ -8,7 +8,7 @@ use synthrs::filter::{
 };
 use synthrs::synthesizer::{make_samples, quantize_samples};
 use synthrs::wave::sine_wave;
-use synthrs::writer::write_wav;
+use synthrs::writer::write_wav_file;
 
 fn main() {
     // Lowpass/highpass filter convolution example
@@ -19,12 +19,12 @@ fn main() {
     let lowpass = lowpass_filter(cutoff_from_frequency(400.0, 44_100), 0.01);
     let mut lowpass_samples = quantize_samples::<i16>(&sample);
     lowpass_samples.extend_from_slice(&*quantize_samples::<i16>(&convolve(&lowpass, &sample)));
-    write_wav("out/lowpass.wav", 44_100, &lowpass_samples).expect("failed");
+    write_wav_file("out/lowpass.wav", 44_100, &lowpass_samples).expect("failed");
 
     let highpass = highpass_filter(cutoff_from_frequency(2000.0, 44_100), 0.01);
     let mut highpass_samples = quantize_samples::<i16>(&sample);
     highpass_samples.extend_from_slice(&*quantize_samples::<i16>(&convolve(&highpass, &sample)));
-    write_wav("out/highpass.wav", 44_100, &highpass_samples).expect("failed");
+    write_wav_file("out/highpass.wav", 44_100, &highpass_samples).expect("failed");
 
     let bandpass = bandpass_filter(
         cutoff_from_frequency(500.0, 44_100),
@@ -33,7 +33,7 @@ fn main() {
     );
     let mut bandpass_samples = quantize_samples::<i16>(&sample);
     bandpass_samples.extend_from_slice(&*quantize_samples::<i16>(&convolve(&bandpass, &sample)));
-    write_wav("out/bandpass.wav", 44_100, &bandpass_samples).expect("failed");
+    write_wav_file("out/bandpass.wav", 44_100, &bandpass_samples).expect("failed");
 
     let bandreject = bandreject_filter(
         cutoff_from_frequency(400.0, 44_100),
@@ -43,5 +43,5 @@ fn main() {
     let mut bandreject_samples = quantize_samples::<i16>(&sample);
     bandreject_samples
         .extend_from_slice(&*quantize_samples::<i16>(&convolve(&bandreject, &sample)));
-    write_wav("out/bandreject.wav", 44_100, &bandreject_samples).expect("failed");
+    write_wav_file("out/bandreject.wav", 44_100, &bandreject_samples).expect("failed");
 }

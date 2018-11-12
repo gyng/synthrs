@@ -7,6 +7,8 @@
 //! `t` is in seconds; sample_rate is handled during synthesis
 //!
 //! Amplitude is in the range [-1, 1] and will be quantized or scaled to target bit depth
+//!
+//! See the short! source for each generator for exact details on what they do.
 
 use std::f64::consts::PI;
 

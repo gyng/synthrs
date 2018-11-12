@@ -46,11 +46,11 @@ extern crate synthrs;
 
 use synthrs::synthesizer::{ make_samples, quantize_samples };
 use synthrs::wave::sine_wave;
-use synthrs::writer::write_wav;
+use synthrs::writer::write_wav_file;
 
 fn main() {
     // Using a predefined generator
-    write_wav("out/sine.wav", 44_100,
+    write_wav_file("out/sine.wav", 44_100,
         &quantize_samples::<i16>(
             &make_samples(1.0, 44_100, sine_wave(440.0))
         )
@@ -58,7 +58,7 @@ fn main() {
 
     // `make_samples` takes in the duration, sample rate, and a generator closure.
     // It returns an iterator which `quantize_samples` wraps around (setting the bit depth).
-    write_wav("out/sine_closure.wav", 44_100,
+    write_wav_file("out/sine_closure.wav", 44_100,
         &quantize_samples::<i16>(
             &make_samples(1.0, 44_100, |t| (t * 440.0 * 2.0 * 3.14159).sin())
         )
@@ -99,7 +99,7 @@ This generates WAV or PCM files which can be opened in Audacity. Example MIDI fi
 * Signed 16-bit PCM
 * Little-endian
 * 1 Channel (Mono)
-* Sample rate: 44_100Hz
+* Sample rate: 44_100Hz (or whatever your samples generated have)
 
 ## License
 

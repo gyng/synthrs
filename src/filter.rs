@@ -1,5 +1,6 @@
-//! A collection of signal filters. To filter a bunch of samples, first create the
-//! filter and samples.
+//! A collection of signal filters.
+//!
+//! To filter a bunch of samples, first create the filter and samples.
 //!
 //! Typically, a filter is used in together with the convolve function:
 //!

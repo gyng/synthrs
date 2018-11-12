@@ -1,12 +1,14 @@
+//! Generate audio samples from code.
+//!
 //! The following code generates a 0.1s long, 16-bit, 440Hz sine_wave at a 44100Hz sample rate.
 //! It then writes the generated samples into a 44100Hz WAV file at `out/sine.wav`.
 //!
 //! ```
 //! use synthrs::wave::sine_wave;
-//! use synthrs::writer::write_wav;
+//! use synthrs::writer::write_wav_file;
 //! use synthrs::synthesizer::{quantize_samples, make_samples};
 //!
-//! write_wav(
+//! write_wav_file(
 //!     "out/sine.wav",
 //!     44_100,
 //!     &quantize_samples::<i16>(&make_samples(0.1, 44_100, sine_wave(440.0))),

@@ -4,10 +4,10 @@ extern crate synthrs;
 
 use synthrs::synthesizer::{make_samples, quantize_samples};
 use synthrs::wave::sine_wave;
-use synthrs::writer::write_wav;
+use synthrs::writer::write_wav_file;
 
 fn main() {
-    write_wav(
+    write_wav_file(
         "out/dialtone.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(15.0, 44_100, |t: f64| -> f64 {
@@ -15,7 +15,7 @@ fn main() {
         })),
     ).expect("failed");
 
-    write_wav(
+    write_wav_file(
         "out/busysignal.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(8.0, 44_100, |t: f64| -> f64 {
@@ -27,7 +27,7 @@ fn main() {
         })),
     ).expect("failed");
 
-    write_wav(
+    write_wav_file(
         "out/fastbusysignal.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(15.0, 44_100, |t: f64| -> f64 {
@@ -39,7 +39,7 @@ fn main() {
         })),
     ).expect("failed");
 
-    write_wav(
+    write_wav_file(
         "out/offhook.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(15.0, 44_100, |t: f64| -> f64 {
@@ -54,7 +54,7 @@ fn main() {
         })),
     ).expect("failed");
 
-    write_wav(
+    write_wav_file(
         "out/ring.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(15.0, 44_100, |t: f64| -> f64 {

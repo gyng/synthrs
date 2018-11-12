@@ -1,3 +1,5 @@
+//! Functions for calculating frequencies based off notes and tuning
+
 /// Calculates the frequency (equal-tempered) given A4, the semitone and the octave.
 /// C4 = `note(440.0, 0u, 4u)`
 ///

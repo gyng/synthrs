@@ -5,14 +5,14 @@ extern crate synthrs;
 use synthrs::midi;
 use synthrs::synthesizer::{make_samples_from_midi, make_samples_from_midi_file, quantize_samples};
 use synthrs::wave;
-use synthrs::writer::write_wav;
+use synthrs::writer::write_wav_file;
 
 fn main() {
     // `make_samples_from_midi_file` is a convenience function that parses and synthesises
     // a MIDI file given a file path
     // Set `use_envelope` to decide whether to use a basic attack/decay envelope when generating samples
     // The envelope will slowly fade each note out over time
-    write_wav(
+    write_wav_file(
         "out/octave.wav",
         44_100,
         &quantize_samples::<i16>(
@@ -26,7 +26,7 @@ fn main() {
     ).expect("failed");
 
     // Pass in any generator to `make_samples_from_midi_file`!
-    write_wav(
+    write_wav_file(
         "out/octave_bell.wav",
         44_100,
         &quantize_samples::<i16>(
@@ -43,7 +43,7 @@ fn main() {
     // The `make_samples_from_midi` function works on an already-parsed MIDI file
     // `read_midi` does the file reading and parsing
     let song = midi::read_midi_file("examples/assets/octave.mid").unwrap();
-    write_wav(
+    write_wav_file(
         "out/octave_no_envelope.wav",
         44_100,
         &quantize_samples::<i16>(
@@ -53,7 +53,7 @@ fn main() {
 
     // Seikilos: the oldest known surviving musical composition
     // https://en.wikipedia.org/wiki/Seikilos_epitaph
-    write_wav(
+    write_wav_file(
         "out/seikilos.wav",
         44_100,
         &quantize_samples::<i16>(
@@ -69,7 +69,7 @@ fn main() {
     ).expect("failed");
 
     // Johann Strauss II - The Blue Danube
-    write_wav(
+    write_wav_file(
         "out/danube.wav",
         44_100,
         &quantize_samples::<i16>(
@@ -83,7 +83,7 @@ fn main() {
     ).expect("failed");
 
     // Grieg - In the Hall of the Mountain King
-    write_wav(
+    write_wav_file(
         "out/mountainking.wav",
         44_100,
         &quantize_samples::<i16>(
@@ -97,7 +97,7 @@ fn main() {
     ).expect("failed");
 
     // Christian Sinding - Rustle of Spring (Frühlingsrauschen)
-    write_wav(
+    write_wav_file(
         "out/rustle.wav",
         44_100,
         &quantize_samples::<i16>(

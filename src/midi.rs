@@ -1,3 +1,5 @@
+//! MIDI parsing routines
+
 use std::cmp::max;
 use std::fs::File;
 use std::io::{BufReader, Error, ErrorKind, Read, Result, Seek, SeekFrom};
