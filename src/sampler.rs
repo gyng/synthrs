@@ -5,7 +5,7 @@ use std::io::Result;
 use crate::synthesizer::unquantize_samples;
 use crate::writer::{read_wav_file, Wave};
 
-/// Given a `create::writer::Wave`, extract a `Vec<f64> of samples from it`
+/// Given a `crate::writer::Wave`, extract a `Vec<f64>` of samples from it
 ///
 /// ```
 /// use synthrs::sampler::samples_from_wave;
@@ -18,7 +18,7 @@ pub fn samples_from_wave(wave: Wave) -> Vec<f64> {
     unquantize_samples(&wave.pcm)
 }
 
-/// Given a path to a wave file, extract a `Vec<f64> of samples from it`
+/// Given a path to a wave file, extract a `Vec<f64>` of samples from it
 ///
 /// ```
 /// use synthrs::sampler::samples_from_wave_file;

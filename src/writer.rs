@@ -166,7 +166,7 @@ pub struct Wave {
     pub pcm: Vec<i16>,
 }
 
-/// Reads a wave file given a file path. Convenience wrapper around `crate::writer::read_wav_file` for details.
+/// Reads a wave file given a file path. Convenience wrapper around `crate::writer::read_wav_file`.
 /// ```
 /// use synthrs::writer;
 ///
@@ -182,11 +182,10 @@ pub fn read_wav_file(filename: &str) -> Result<Wave> {
 
 /// Reads a wave file. Only supports mono 16-bit, little-endian, signed PCM WAV files
 ///
-///
 /// ### Useful commands:
 ///
-/// Use `ffmpeg -i .\example.wav` to inspect a wav
-/// Use `ffmpeg -i "dirty.wav" -f wav -flags +bitexact -acodec pcm_s16le -ar 44100 -ac 1 "clean.wav"` to clean a WAV
+/// * Use `ffmpeg -i .\example.wav` to inspect a wav
+/// * Use `ffmpeg -i "dirty.wav" -f wav -flags +bitexact -acodec pcm_s16le -ar 44100 -ac 1 "clean.wav"` to clean a WAV
 ///
 /// ```
 /// use std::path::Path;
