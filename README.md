@@ -27,6 +27,7 @@ Toy synthesiser library in Rust. Requires Rust nightly for now (ie. does not com
 * [mtnking-pure](examples/assets/mountainking-puresquare.ogg) *pure square wave*
 * [mtnking-envelope](examples/assets/mountainking.ogg) *butchered Karplus-Strong square wave with attack and decay*
 * [rustle](examples/assets/rustle.ogg)
+* [clarinet sample](examples/assets/octave_clarinet_sampler.ogg)
 * [assorted synthesized MIDIs](http://sugoi.pw/samples/) *pure square waves*
 
 ## Try
