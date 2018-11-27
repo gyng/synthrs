@@ -91,6 +91,15 @@ pub fn organ(frequency: f64) -> impl Fn(f64) -> f64 {
 /// `decay` in seconds
 /// `sharpness` 0-1 is decent
 /// `sample_rate` in hertz (eg, `44_100.0`)
+///
+/// ```
+/// use synthrs::wave;
+///
+/// let karplus_sawtooth_generator =
+///     |frequency: f64| {
+///         wave::karplus_strong(wave::sawtooth_wave(frequency), 0.01, 1.0, 0.9, 44_100.0)
+///     };
+/// ```
 pub fn karplus_strong<F: Fn(f64) -> f64>(
     generator: F,
     attack: f64,
@@ -115,7 +124,45 @@ pub fn noise() -> impl Fn(f64) -> f64 {
     |_t| rand::random::<f64>()
 }
 
-/// rising_linear is a stateful generator function.
+/// `sampler` creates a a generator function given a bunch of samples. Different frequencies are
+/// generated using a simple pitch shift.
+///
+/// `frequency`: The frequency passed in to the generator
+/// `sample`: The sample to be used. This is a `&'static Vec<f64>` and can be done during runtime with `lazy_static!`.
+/// `sample_frequency`: The frequency of the sample provided. This is used to calculate how much to shift the pitch.
+/// `sample_rate`: The sample rate of the given sample
+/// ```compile_fail
+/// use synthrs::sampler;
+/// use synthrs::wave;
+///
+/// lazy_static! {
+///    static ref SAMPLE: Vec<f64> =
+///         sampler::samples_from_wave_file("test/assets/sine.wav").unwrap();
+/// }
+///
+/// let frequency_to_generate = 110.0;
+/// let sampler = wave::sampler(frequency_to_generate, &SAMPLE, 440.0, 44_100.0);
+/// ```
+pub fn sampler(
+    frequency: f64,
+    sample: &'static Vec<f64>,
+    sample_frequency: f64,
+    sample_rate: f64,
+) -> impl Fn(f64) -> f64 {
+    move |t| {
+        let multiplier = frequency / sample_frequency;
+        let original_index = sample_rate * t;
+        let adjusted_index = (multiplier * original_index).round() as usize;
+
+        if adjusted_index >= sample.len() {
+            0.0
+        } else {
+            sample[adjusted_index]
+        }
+    }
+}
+
+/// `rising_linear` is a stateful generator function.
 /// Starting from `start_frequency`, it increases the output frequency by `increment_per_sample`
 /// each time it is called, and loops back to `start_frequency` when it is above `end_frequency`.
 ///

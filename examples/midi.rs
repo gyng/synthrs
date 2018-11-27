@@ -1,8 +1,11 @@
 #![feature(unboxed_closures)]
 
 extern crate synthrs;
+#[macro_use]
+extern crate lazy_static;
 
 use synthrs::midi;
+use synthrs::sampler;
 use synthrs::synthesizer::{make_samples_from_midi, make_samples_from_midi_file, quantize_samples};
 use synthrs::wave;
 use synthrs::writer::write_wav_file;
@@ -26,6 +29,59 @@ fn main() {
     ).expect("failed");
 
     // Pass in any generator to `make_samples_from_midi_file`!
+    write_wav_file(
+        "out/octave_bell.wav",
+        44_100,
+        &quantize_samples::<i16>(
+            &make_samples_from_midi_file(
+                |frequency: f64| wave::bell(frequency, 0.003, 0.5),
+                44_100,
+                false,
+                "examples/assets/octave.mid",
+            ).unwrap(),
+        ),
+    ).expect("failed");
+
+    // Use a sample to generate music!
+    // This is a YAMAHA SY35 sample grabbed from http://legowelt.org/samples/
+    lazy_static! {
+        static ref PIANO: Vec<f64> =
+            sampler::samples_from_wave_file("examples/assets/piano110hz.wav").unwrap();
+    }
+
+    write_wav_file(
+        "out/octave_piano_sampler.wav",
+        44_100,
+        &quantize_samples::<i16>(
+            &make_samples_from_midi_file(
+                // Give the samples, the sample's frequency, and sample's "sample rate (usually 44100Hz)"
+                |frequency: f64| wave::sampler(frequency, &PIANO, 110.0, 44_100.0),
+                44_100,
+                false,
+                "examples/assets/octave.mid",
+            ).unwrap(),
+        ),
+    ).expect("failed");
+
+    // This is a YAMAHA SY35 sample grabbed from http://legowelt.org/samples/
+    lazy_static! {
+        static ref CLARINET: Vec<f64> =
+            sampler::samples_from_wave_file("examples/assets/clarinet262.wav").unwrap();
+    }
+
+    write_wav_file(
+        "out/octave_clarinet_sampler.wav",
+        44_100,
+        &quantize_samples::<i16>(
+            &make_samples_from_midi_file(
+                |frequency: f64| wave::sampler(frequency, &CLARINET, 262.0, 44_100.0),
+                44_100,
+                false,
+                "examples/assets/octave.mid",
+            ).unwrap(),
+        ),
+    ).expect("failed");
+
     write_wav_file(
         "out/octave_bell.wav",
         44_100,

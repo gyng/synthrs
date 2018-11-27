@@ -20,7 +20,7 @@
 use std::iter::Iterator;
 use std::mem::size_of;
 
-use num::traits::{Bounded, FromPrimitive, Num, Zero};
+use num::traits::{Bounded, FromPrimitive, Num, ToPrimitive, Zero};
 use num::Float;
 
 use crate::errors::SynthrsError;
@@ -49,6 +49,26 @@ where
     T::from_f64(input * (quantization_levels / 2.0)).unwrap_or(T::zero())
 }
 
+/// Reverses a quantization from `T` into `f64`.
+/// Convert from `T` to take up full quantization range of `f64`.
+///
+/// Note: This does not attempt to recover any loss of information from prior quantization processes.
+///
+/// ```
+/// use synthrs::synthesizer::unquantize;
+///
+/// assert_eq!(unquantize(&0.0f32), 0.0f64);
+/// assert_eq!(unquantize(&0u8), 0.0f64);
+/// assert_eq!(unquantize(&0i16), 0.0f64);
+/// ```
+pub fn unquantize<T>(input: &T) -> f64
+where
+    T: Num + ToPrimitive + Bounded + Zero,
+{
+    let quantization_levels = 2.0.powf(size_of::<T>() as f64 * 8.0 - 1.0);
+    T::to_f64(&input).unwrap_or(0.0) * (quantization_levels / 2.0)
+}
+
 /// Quantizes a `Vec<f64>` of samples into `Vec<T>`.
 ///
 /// This creates a 16-bit `sine_wave` at 440Hz:
@@ -64,6 +84,22 @@ where
     T: Num + FromPrimitive + Bounded + Zero,
 {
     input.iter().map(|s| quantize::<T>(*s)).collect()
+}
+
+/// Reverses quantization of `Vec<T>` into a `Vec<f64>`.
+///
+/// Note: This does not attempt to recover any loss of information from prior quantization processes.
+///
+/// ```
+/// use synthrs::synthesizer::unquantize_samples;
+///
+/// assert_eq!(unquantize_samples(&[0.0f32; 2]), [0.0f64; 2]);
+/// ```
+pub fn unquantize_samples<T>(input: &[T]) -> Vec<f64>
+where
+    T: Num + ToPrimitive + Bounded + Zero,
+{
+    input.iter().map(|s| unquantize::<T>(&*s)).collect()
 }
 
 /// Invokes the waveform function `f` at time `t` to return the amplitude at that time.
@@ -281,16 +317,17 @@ where
                 let frequency = music::note_midi(440.0, note as usize);
                 // TODO: split loudness into a util module
                 let loudness = (6.908 * (f64::from(velocity) / 255.0)).exp() / 1000.0;
-                out += loudness * (instrument)(frequency)(t);
+
+                let start_t = start_tick as f64 * 60.0 / song.bpm as f64 / song.time_unit as f64;
+                let relative_t = t - start_t;
+
+                out += loudness * (instrument)(frequency)(relative_t);
 
                 if use_envelope {
-                    let start_t =
-                        start_tick as f64 * 60.0 / song.bpm as f64 / song.time_unit as f64;
-
                     // TODO: make this an option
                     let attack = 0.01;
                     let decay = 1.0;
-                    let relative_t = t - start_t;
+
                     out *= filter::envelope(relative_t, attack, decay);
 
                     // TODO: make this an option, since it's awful for sine wave
@@ -332,7 +369,7 @@ mod tests {
     use crate::wave::sine_wave;
 
     #[test]
-    fn it_peak_normalizes() {
+    fn test_peak_normalize() {
         let input_negative = vec![-2.0f64, 1.0, -1.0];
         let output_negative = peak_normalize(&input_negative);
         assert_eq!(output_negative, vec![-1.0f64, 0.5, -0.5]);
@@ -343,7 +380,7 @@ mod tests {
     }
 
     #[test]
-    fn it_quantizes() {
+    fn test_quantize() {
         assert_eq!(i8::MAX, quantize::<i8>(1.0));
         // assert_eq!(i8::MIN + 1, quantize::<i8>(-1.0)); // Bad quantization behaviour?
         assert_eq!(i16::MAX, quantize::<i16>(1.0));
