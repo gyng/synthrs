@@ -14,6 +14,7 @@ Toy synthesiser library in Rust. Requires Rust nightly for now (ie. does not com
 * MIDI synthesis
 * Basic sample synthesis
 * PCM or WAV output
+* WAV input (for samples)
 
 #### Integrations
 
