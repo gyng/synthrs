@@ -12,9 +12,8 @@ Toy synthesiser library in Rust. Requires Rust nightly for now (ie. does not com
 * Basic filters (low-pass, high-pass, band-pass, band-reject, attack/decay envelope)
 * Basic waveforms (sine, square, triangle, sawtooth, tangent, bastardised Karplus-Strong, and more)
 * MIDI synthesis
-* Basic sample synthesis
+* Basic sample synthesis (WAV)
 * PCM or WAV output
-* WAV input (for samples)
 
 #### Integrations
 
