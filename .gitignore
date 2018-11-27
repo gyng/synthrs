@@ -16,7 +16,7 @@ main.exe
 *.avi
 *.mkv
 *.wav
-!tests/*.wav
+!tests/assets/*.wav
 *.pcm
 
 # Windows image file caches
