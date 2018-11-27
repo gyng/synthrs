@@ -1,9 +1,9 @@
 //! Functions for dealing with creating samples for sample-synthesis generators
 
-use std::io::Result;
+use std::io::{BufReader, Cursor, Read, Result};
 
 use crate::synthesizer::unquantize_samples;
-use crate::writer::{read_wav_file, Wave};
+use crate::writer::{read_wav, read_wav_file, Wave};
 
 /// Given a `crate::writer::Wave`, extract a `Vec<f64>` of samples from it
 ///
@@ -16,6 +16,13 @@ use crate::writer::{read_wav_file, Wave};
 /// ```
 pub fn samples_from_wave(wave: Wave) -> Vec<f64> {
     unquantize_samples(&wave.pcm)
+}
+
+/// Given a bunch of bytes for a wave file, extract a `Vec<f64>` of samples from it
+pub fn samples_from_wave_bytes(bytes: Vec<u8>) -> Result<Vec<f64>> {
+    let mut cursor = Cursor::new(bytes);
+    let wave = read_wav(&mut cursor)?;
+    Ok(samples_from_wave(wave))
 }
 
 /// Given a path to a wave file, extract a `Vec<f64>` of samples from it
