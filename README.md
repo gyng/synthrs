@@ -39,6 +39,7 @@ To use as a library, add this to `Cargo.toml`
 
     [dependencies.synthrs]
     git = "https://github.com/gyng/synthrs"
+    rev = "the commit you want"
 
 To write a custom tone to a WAV file
 
