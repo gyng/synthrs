@@ -1,6 +1,6 @@
 //! Functions for dealing with creating samples for sample-synthesis generators
 
-use std::io::{BufReader, Cursor, Read, Result};
+use std::io::{Cursor, Result};
 
 use crate::synthesizer::unquantize_samples;
 use crate::writer::{read_wav, read_wav_file, Wave};

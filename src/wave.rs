@@ -10,6 +10,7 @@
 //!
 //! See the short! source for each generator for exact details on what they do.
 
+use std::collections::VecDeque;
 use std::f64::consts::PI;
 
 use crate::filter::envelope;
@@ -110,8 +111,7 @@ pub fn karplus_strong<F: Fn(f64) -> f64>(
     move |t| {
         let tick = 1.0 / sample_rate;
 
-        // Pretend we have a delay feature in synthrs, manually unroll delay loops
-        // Any given sample at any given time will have "imaginary past" loops in it
+        // Instead of using delay_line we manually unroll the loop here
         (0..10usize).fold(0.0, |acc, i| {
             acc + generator(t - tick * i as f64)
                 * envelope(tick * i as f64, attack, decay)
@@ -158,6 +158,44 @@ pub fn sampler(
             0.0
         } else {
             sample[adjusted_index]
+        }
+    }
+}
+
+/// `delay_line` wraps a generator function, delaying its output by `delay_length_samples` number of samples.
+///
+/// `generator`: The generator to delay
+/// `delay_length`: Seconds to delay by
+/// `sample_rate`: The sample rate of the given sample
+///
+/// ```
+/// use synthrs::sampler;
+/// use synthrs::wave;
+///
+/// // This creates a sine wave that's delayed by 1 second
+/// let generator = wave::sine_wave(440.0);
+/// let delayed_sine = wave::delay_line(generator, 1.0, 44_100);
+/// ```
+pub fn delay_line<F: Fn(f64) -> f64>(
+    generator: F,
+    delay_length: f64,
+    sample_rate: usize,
+) -> impl Fn(f64) -> f64 {
+    let delay_length_samples = (delay_length * sample_rate as f64).floor() as usize;
+    let buf: VecDeque<f64> = VecDeque::with_capacity(delay_length_samples + 1);
+    let cell = std::cell::RefCell::new(buf);
+
+    move |t| {
+        let mut buf = cell.borrow_mut();
+        let current_sample = generator(t);
+        buf.push_back(current_sample);
+
+        if buf.len() < delay_length_samples + 1 {
+            println!("return 0");
+            0.0f64
+        } else {
+            println!("return not 0");
+            buf.pop_front().unwrap_or(0.0f64)
         }
     }
 }
@@ -209,4 +247,24 @@ pub fn rising_linear(
     //     sine_wave(new_frequency)(t)
     // }
     // ```
+}
+
+mod tests {
+    #[allow(unused_imports)]
+    use super::*;
+
+    #[test]
+    fn test_delay_line() {
+        let identity = |t| t;
+        let delayed = delay_line(identity, 3.0, 1);
+
+        assert_eq!(delayed(1.0f64), 0.0f64);
+        assert_eq!(delayed(3.0f64), 0.0f64);
+        assert_eq!(delayed(5.0f64), 0.0f64);
+        assert_eq!(delayed(7.0f64), 1.0f64);
+        assert_eq!(delayed(11.0f64), 3.0f64);
+        assert_eq!(delayed(13.0f64), 5.0f64);
+        assert_eq!(delayed(17.0f64), 7.0f64);
+        assert_eq!(delayed(19.0f64), 11.0f64);
+    }
 }
