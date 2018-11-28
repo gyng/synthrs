@@ -2,10 +2,7 @@
 
 extern crate synthrs;
 
-use synthrs::filter::{
-    bandpass_filter, bandreject_filter, convolve, cutoff_from_frequency, highpass_filter,
-    lowpass_filter,
-};
+use synthrs::filter::*;
 use synthrs::synthesizer::{make_samples, quantize_samples};
 use synthrs::wave::sine_wave;
 use synthrs::writer::write_wav_file;
@@ -44,4 +41,25 @@ fn main() {
     bandreject_samples
         .extend_from_slice(&*quantize_samples::<i16>(&convolve(&bandreject, &sample)));
     write_wav_file("out/bandreject.wav", 44_100, &bandreject_samples).expect("failed");
+
+    // Stateful filters
+    let mut comb = Comb::new(0.2, 44_100, 0.5, 0.5, 0.5);
+    let comb_samples: Vec<f64> = sample.clone().into_iter().map(|s| comb.tick(s)).collect();
+    write_wav_file(
+        "out/comb.wav",
+        44_100,
+        &*quantize_samples::<i16>(comb_samples.as_slice()),
+    ).expect("failed");
+
+    let mut allpass = AllPass::new(1.0, 44_100, 0.5);
+    let allpass_samples: Vec<f64> = sample
+        .clone()
+        .into_iter()
+        .map(|s| allpass.tick(s))
+        .collect();
+    write_wav_file(
+        "out/allpass.wav",
+        44_100,
+        &*quantize_samples::<i16>(allpass_samples.as_slice()),
+    ).expect("failed");
 }
