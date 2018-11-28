@@ -23,6 +23,8 @@ Toy synthesiser library in Rust. Requires Rust nightly for now (ie. does not com
 
 #### Examples (loud)
 
+**You have to right-click > download these to your computer because GitHub does not like to stream audio**
+
 * [busy signal](examples/assets/busysignal.ogg)
 * [bell](examples/assets/bell.ogg)
 * [mtnking-pure](examples/assets/mountainking-puresquare.ogg) *pure square wave*
