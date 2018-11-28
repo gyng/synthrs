@@ -111,7 +111,7 @@ pub fn karplus_strong<F: Fn(f64) -> f64>(
     move |t| {
         let tick = 1.0 / sample_rate;
 
-        // Instead of using delay_line we manually unroll the loop here
+        // Instead of using delay_line_generator we manually unroll the loop here
         (0..10usize).fold(0.0, |acc, i| {
             acc + generator(t - tick * i as f64)
                 * envelope(tick * i as f64, attack, decay)
@@ -162,7 +162,9 @@ pub fn sampler(
     }
 }
 
-/// `delay_line` wraps a generator function, delaying its output by `delay_length_samples` number of samples.
+/// Wwraps a generator function, delaying its output by `delay_length_samples` number of samples.
+/// This isn't very useful in most cases because generator will likely change due to frequency changes.alloc
+/// Look at `::crate::filter::DelayLine` for a more stateful filter that works on generated samples instead for most use cases.
 ///
 /// `generator`: The generator to delay
 /// `delay_length`: Seconds to delay by
@@ -174,9 +176,9 @@ pub fn sampler(
 ///
 /// // This creates a sine wave that's delayed by 1 second
 /// let generator = wave::sine_wave(440.0);
-/// let delayed_sine = wave::delay_line(generator, 1.0, 44_100);
+/// let delayed_sine = wave::delay_line_generator(generator, 1.0, 44_100);
 /// ```
-pub fn delay_line<F: Fn(f64) -> f64>(
+pub fn delay_line_generator<F: Fn(f64) -> f64>(
     generator: F,
     delay_length: f64,
     sample_rate: usize,
@@ -188,15 +190,15 @@ pub fn delay_line<F: Fn(f64) -> f64>(
     move |t| {
         let mut buf = cell.borrow_mut();
         let current_sample = generator(t);
-        buf.push_back(current_sample);
 
-        if buf.len() < delay_length_samples + 1 {
-            println!("return 0");
+        let output = if buf.len() < delay_length_samples {
             0.0f64
         } else {
-            println!("return not 0");
             buf.pop_front().unwrap_or(0.0f64)
-        }
+        };
+
+        buf.push_back(current_sample);
+        output
     }
 }
 
@@ -256,15 +258,15 @@ mod tests {
     #[test]
     fn test_delay_line() {
         let identity = |t| t;
-        let delayed = delay_line(identity, 3.0, 1);
+        let delayed = delay_line_generator(identity, 3.0, 1);
 
-        assert_eq!(delayed(1.0f64), 0.0f64);
-        assert_eq!(delayed(3.0f64), 0.0f64);
-        assert_eq!(delayed(5.0f64), 0.0f64);
-        assert_eq!(delayed(7.0f64), 1.0f64);
-        assert_eq!(delayed(11.0f64), 3.0f64);
-        assert_eq!(delayed(13.0f64), 5.0f64);
-        assert_eq!(delayed(17.0f64), 7.0f64);
-        assert_eq!(delayed(19.0f64), 11.0f64);
+        assert_eq!(delayed(1.0), 0.0);
+        assert_eq!(delayed(3.0), 0.0);
+        assert_eq!(delayed(5.0), 0.0);
+        assert_eq!(delayed(7.0), 1.0);
+        assert_eq!(delayed(11.0), 3.0);
+        assert_eq!(delayed(13.0), 5.0);
+        assert_eq!(delayed(17.0), 7.0);
+        assert_eq!(delayed(19.0), 11.0);
     }
 }

@@ -9,8 +9,8 @@ Toy synthesiser library in Rust. Requires Rust nightly for now (ie. does not com
 ## Features
 
 * Not too difficult syntax for writing your own tones (see examples)
-* Basic filters (low-pass, high-pass, band-pass, band-reject, attack/decay envelope)
-* Basic waveforms (sine, square, triangle, sawtooth, tangent, bastardised Karplus-Strong, delay line, and more)
+* Basic filters (low-pass, high-pass, band-pass, band-reject, all-pass, comb, delay line, attack/decay envelope)
+* Basic waveforms (sine, square, triangle, sawtooth, tangent, bastardised Karplus-Strong, and more)
 * MIDI synthesis
 * Basic sample synthesis (WAV)
 * PCM or WAV output
