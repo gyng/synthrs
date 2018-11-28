@@ -152,6 +152,20 @@ fn main() {
         ),
     ).expect("failed");
 
+    // Satie - Gymnopédies No. 1 using a piano sample
+    write_wav_file(
+        "out/gymnopedie_sampler.wav",
+        44_100,
+        &quantize_samples::<i16>(
+            &make_samples_from_midi_file(
+                |frequency: f64| wave::sampler(frequency, &PIANO, 110.0, 44_100.0),
+                44_100,
+                false,
+                "examples/assets/gymnopedie1.mid",
+            ).unwrap(),
+        ),
+    ).expect("failed");
+
     // Christian Sinding - Rustle of Spring (Frühlingsrauschen)
     write_wav_file(
         "out/rustle.wav",
