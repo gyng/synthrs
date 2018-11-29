@@ -12,6 +12,7 @@
 
 use std::collections::VecDeque;
 use std::f64::consts::PI;
+use std::cell::RefCell;
 
 use crate::filter::envelope;
 
@@ -149,15 +150,19 @@ pub fn sampler(
     sample_frequency: f64,
     sample_rate: f64,
 ) -> impl Fn(f64) -> f64 {
+    let cell = RefCell::new(sample);
+
     move |t| {
         let multiplier = frequency / sample_frequency;
         let original_index = sample_rate * t;
         let adjusted_index = (multiplier * original_index).round() as usize;
 
-        if adjusted_index >= sample.len() {
+        let sample_borrow = cell.borrow_mut();
+
+        if adjusted_index >= sample_borrow.len() {
             0.0
         } else {
-            sample[adjusted_index]
+            sample_borrow[adjusted_index]
         }
     }
 }
