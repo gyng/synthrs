@@ -125,44 +125,47 @@ pub fn noise() -> impl Fn(f64) -> f64 {
 }
 
 /// `sampler` creates a a generator function given a bunch of samples. Different frequencies are
-/// generated using a simple pitch shift.
+/// generated using a simple pitch shift. This function is unsafe because we want to share
+/// `sample` without resorting to a `'static` lifetime (making it easier to use with bindgen).
 ///
-/// `frequency`: The frequency passed in to the generator
-/// `sample`: The sample to be used. This is a `&'static Vec<f64>` and can be done during runtime with `lazy_static!`.
-/// `sample_frequency`: The frequency of the sample provided. This is used to calculate how much to shift the pitch.
-/// `sample_rate`: The sample rate of the given sample
+/// * `frequency`: The frequency passed in to the generator
+/// * `samples`: The raw pointer to the samples to be used
+/// * `sample_length`: Length of `samples`
+/// * `sample_frequency`: The frequency of the sample provided. This is used to calculate how much to shift the pitch.
+/// * `sample_rate`: The sample rate of the given sample
 /// ```compile_fail
 /// use synthrs::sampler;
 /// use synthrs::wave;
 ///
-/// lazy_static! {
-///    static ref SAMPLE: Vec<f64> =
-///         sampler::samples_from_wave_file("test/assets/sine.wav").unwrap();
-/// }
+/// let (piano_sample, sample_length) =
+///        sample::samples_from_wave_file("examples/assets/piano110hz.wav").unwrap();
 ///
 /// let frequency_to_generate = 110.0;
-/// let sampler = wave::sampler(frequency_to_generate, &SAMPLE, 440.0, 44_100.0);
+/// let sampler = wave::sampler(frequency, &piano_sample, sample_length, 110.0, 44_100)
 /// ```
 pub fn sampler(
     frequency: f64,
-    sample: &'static Vec<f64>,
+    samples: *const Vec<f64>,
+    sample_length: usize,
     sample_frequency: f64,
-    sample_rate: f64,
+    sample_rate: usize,
 ) -> impl Fn(f64) -> f64 {
     move |t| {
         let multiplier = frequency / sample_frequency;
-        let original_index = sample_rate * t;
+        let original_index = sample_rate as f64 * t;
         let adjusted_index = (multiplier * original_index).round() as usize;
 
-        if adjusted_index >= sample.len() {
+        // We have no intention of copying sample, and we don't want to use &'static Vec<f64> for wasm interop
+        let raw_samples = unsafe { &*samples };
+        if adjusted_index >= sample_length {
             0.0
         } else {
-            sample[adjusted_index]
+            raw_samples[adjusted_index]
         }
     }
 }
 
-/// Wwraps a generator function, delaying its output by `delay_length_samples` number of samples.
+/// Wraps a generator function, delaying its output by `delay_length_samples` number of samples.
 /// This isn't very useful in most cases because generator will likely change due to frequency changes.alloc
 /// Look at `::crate::filter::DelayLine` for a more stateful filter that works on generated samples instead for most use cases.
 ///
@@ -171,7 +174,6 @@ pub fn sampler(
 /// `sample_rate`: The sample rate of the given sample
 ///
 /// ```
-/// use synthrs::sampler;
 /// use synthrs::wave;
 ///
 /// // This creates a sine wave that's delayed by 1 second

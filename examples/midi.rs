@@ -1,11 +1,9 @@
 #![feature(unboxed_closures)]
 
 extern crate synthrs;
-#[macro_use]
-extern crate lazy_static;
 
 use synthrs::midi;
-use synthrs::sampler;
+use synthrs::sample;
 use synthrs::synthesizer::{make_samples_from_midi, make_samples_from_midi_file, quantize_samples};
 use synthrs::wave;
 use synthrs::writer::write_wav_file;
@@ -44,18 +42,18 @@ fn main() {
 
     // Use a sample to generate music!
     // This is a YAMAHA SY35 sample grabbed from http://legowelt.org/samples/
-    lazy_static! {
-        static ref PIANO: Vec<f64> =
-            sampler::samples_from_wave_file("examples/assets/piano110hz.wav").unwrap();
-    }
+    let (piano_sample, piano_sample_len) =
+        sample::samples_from_wave_file("examples/assets/piano110hz.wav").unwrap();
+    // Give the samples, length of samples, the sample's frequency, and sample's "sample rate (usually 44100Hz)"
+    let piano_sampler =
+        |frequency: f64| wave::sampler(frequency, &piano_sample, piano_sample_len, 110.0, 44_100);
 
     write_wav_file(
         "out/octave_piano_sampler.wav",
         44_100,
         &quantize_samples::<i16>(
             &make_samples_from_midi_file(
-                // Give the samples, the sample's frequency, and sample's "sample rate (usually 44100Hz)"
-                |frequency: f64| wave::sampler(frequency, &PIANO, 110.0, 44_100.0),
+                piano_sampler,
                 44_100,
                 false,
                 "examples/assets/octave.mid",
@@ -64,17 +62,24 @@ fn main() {
     ).expect("failed");
 
     // This is a YAMAHA SY35 sample grabbed from http://legowelt.org/samples/
-    lazy_static! {
-        static ref CLARINET: Vec<f64> =
-            sampler::samples_from_wave_file("examples/assets/clarinet262.wav").unwrap();
-    }
+    let (clarinet_sample, clarinet_sample_len) =
+        sample::samples_from_wave_file("examples/assets/clarinet262.wav").unwrap();
+    let clarinet_sampler = |frequency: f64| {
+        wave::sampler(
+            frequency,
+            &clarinet_sample,
+            clarinet_sample_len,
+            262.0,
+            44_100,
+        )
+    };
 
     write_wav_file(
         "out/octave_clarinet_sampler.wav",
         44_100,
         &quantize_samples::<i16>(
             &make_samples_from_midi_file(
-                |frequency: f64| wave::sampler(frequency, &CLARINET, 262.0, 44_100.0),
+                clarinet_sampler,
                 44_100,
                 false,
                 "examples/assets/octave.mid",
@@ -158,7 +163,7 @@ fn main() {
         44_100,
         &quantize_samples::<i16>(
             &make_samples_from_midi_file(
-                |frequency: f64| wave::sampler(frequency, &PIANO, 110.0, 44_100.0),
+                piano_sampler,
                 44_100,
                 false,
                 "examples/assets/gymnopedie1.mid",
