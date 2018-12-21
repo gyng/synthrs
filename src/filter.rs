@@ -101,7 +101,8 @@ pub fn blackman_window(size: usize) -> Vec<f64> {
         .map(|i| {
             0.42 - 0.5 * (2.0 * PI * i as f64 / (size as f64 - 1.0)).cos()
                 + 0.08 * (4.0 * PI * i as f64 / (size as f64 - 1.0)).cos()
-        }).collect()
+        })
+        .collect()
 }
 
 /// Creates a high-pass filter. Frequencies above the cutoff are preserved when
@@ -140,7 +141,8 @@ pub fn spectral_invert(filter: &[f64]) -> Vec<f64> {
             let add = if count == filter.len() / 2 { 1.0 } else { 0.0 };
             count += 1;
             -el + add
-        }).collect()
+        })
+        .collect()
 }
 
 pub fn convolve(filter: &[f64], input: &[f64]) -> Vec<f64> {
@@ -221,9 +223,9 @@ impl DelayLine {
         DelayLine {
             buf: vec![0.0; delay_samples],
             index: 0,
-            delay_length: delay_length,
-            delay_samples: delay_samples,
-            sample_rate: sample_rate,
+            delay_length,
+            delay_samples,
+            sample_rate,
         }
     }
 
@@ -268,7 +270,7 @@ impl AllPass {
     pub fn new(delay_length: f64, sample_rate: usize, feedback: f64) -> AllPass {
         AllPass {
             delay_line: DelayLine::new(delay_length, sample_rate),
-            feedback: feedback,
+            feedback,
         }
     }
 
@@ -315,10 +317,10 @@ impl Comb {
         feedback: f64,
     ) -> Comb {
         Comb {
-            dampening_inverse: dampening_inverse,
-            dampening: dampening,
+            dampening_inverse,
+            dampening,
             delay_line: DelayLine::new(delay_length, sample_rate),
-            feedback: feedback,
+            feedback,
             filter_state: 0.0,
         }
     }
@@ -354,6 +356,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn test_envelope() {
         assert_eq!(envelope(0.25, 1.0, 1.0), 0.25);
         assert_eq!(envelope(0.5, 1.0, 1.0), 0.5);
@@ -364,6 +367,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn test_delay_line() {
         let mut delay_line = DelayLine::new(3.0, 1);
 

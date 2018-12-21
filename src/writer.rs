@@ -277,20 +277,20 @@ where
     }
 
     let wave = Wave {
-        audio_format: audio_format,
-        bits_per_sample: bits_per_sample,
-        block_align: block_align,
-        byte_rate: byte_rate,
-        chunk_id: chunk_id,
-        chunk_size: chunk_size,
-        format: format,
-        num_channels: num_channels,
-        pcm: pcm,
-        sample_rate: sample_rate,
-        subchunk_1_id: subchunk_1_id,
-        subchunk_1_size: subchunk_1_size,
-        subchunk_2_id: subchunk_2_id,
-        subchunk_2_size: subchunk_2_size,
+        audio_format,
+        bits_per_sample,
+        block_align,
+        byte_rate,
+        chunk_id,
+        chunk_size,
+        format,
+        num_channels,
+        pcm,
+        sample_rate,
+        subchunk_1_id,
+        subchunk_1_size,
+        subchunk_2_id,
+        subchunk_2_size,
     };
 
     Ok(wave)
@@ -330,7 +330,8 @@ mod tests {
             &mut output_writer,
             44_100,
             &quantize_samples::<i16>(&make_samples(0.1, 44_100, sine_wave(440.0))),
-        ).unwrap();
+        )
+        .unwrap();
 
         let _ = output_writer.seek(SeekFrom::Start(0));
         let wave = read_wav(&mut output_writer).unwrap();

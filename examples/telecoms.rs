@@ -13,7 +13,8 @@ fn main() {
         &quantize_samples::<i16>(&make_samples(15.0, 44_100, |t: f64| -> f64 {
             0.5 * (sine_wave(350.0)(t) + sine_wave(440.0)(t))
         })),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     write_wav_file(
         "out/busysignal.wav",
@@ -25,7 +26,8 @@ fn main() {
                 0.0
             }
         })),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     write_wav_file(
         "out/fastbusysignal.wav",
@@ -37,7 +39,8 @@ fn main() {
                 0.0
             }
         })),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     write_wav_file(
         "out/offhook.wav",
@@ -52,7 +55,8 @@ fn main() {
                 0.0
             }
         })),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     write_wav_file(
         "out/ring.wav",
@@ -64,5 +68,6 @@ fn main() {
                 0.0
             }
         })),
-    ).expect("failed");
+    )
+    .expect("failed");
 }

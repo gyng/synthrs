@@ -39,7 +39,7 @@ impl error::Error for SynthrsError {
     fn cause(&self) -> Option<&error::Error> {
         match *self {
             SynthrsError::Parse(ref _token) => None,
-            SynthrsError::Io(ref err) => err.cause(),
+            SynthrsError::Io(ref err) => err.source(),
         }
     }
 }

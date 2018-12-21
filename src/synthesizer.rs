@@ -46,7 +46,7 @@ where
 {
     let quantization_levels = 2.0.powf(size_of::<T>() as f64 * 8.0) - 1.0;
     // defaults to 0 on quantization failure for whatever reason
-    T::from_f64(input * (quantization_levels / 2.0)).unwrap_or(T::zero())
+    T::from_f64(input * (quantization_levels / 2.0)).unwrap_or_else(T::zero)
 }
 
 /// Reverses a quantization from `T` into `f64`.
@@ -168,8 +168,8 @@ impl SamplesIter {
     pub fn new(sample_rate: u64, waveform: Box<Fn(f64) -> f64 + Send + 'static>) -> SamplesIter {
         SamplesIter {
             i: 0,
-            sample_rate: sample_rate,
-            waveform: waveform,
+            sample_rate,
+            waveform,
         }
     }
 }
@@ -269,9 +269,13 @@ where
 {
     let length = (60.0 * song.max_time as f64) / (song.bpm * song.time_unit as f64);
 
-    let mut notes_on_for_ticks: Vec<Vec<(u8, u8, usize, usize, usize)>> = Vec::new();
+    // midi note, velocity, start_tick, i, ticks_left
+    type TickNote = (u8, u8, usize, usize, usize);
+
+    // Each tick (=audio sample) can have multiple notes active
+    let mut notes_on_for_ticks: Vec<Vec<TickNote>> = Vec::new();
     for _ in 0..song.max_time {
-        let notes_on_for_tick: Vec<(u8, u8, usize, usize, usize)> = Vec::new();
+        let notes_on_for_tick: Vec<TickNote> = Vec::new();
         notes_on_for_ticks.push(notes_on_for_tick);
     }
 
@@ -380,6 +384,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn test_quantize() {
         assert_eq!(i8::MAX, quantize::<i8>(1.0));
         // assert_eq!(i8::MIN + 1, quantize::<i8>(-1.0)); // Bad quantization behaviour?
@@ -389,17 +394,22 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::approx_constant, clippy::float_cmp)]
     fn test_samples_iterator() {
         let mut iter = SamplesIter::new(1, Box::new(sine_wave(3.1415)));
         assert_eq!(iter.next().unwrap(), 0.0);
-        assert_eq!(iter.next().unwrap(), 0.7764865126870779);
-        assert_eq!(iter.next().unwrap(), 0.9785809043254725);
+        assert_eq!(iter.next().unwrap(), 0.776_486_512_687_077_9);
+        assert_eq!(iter.next().unwrap(), 0.978_580_904_325_472_5);
     }
 
     #[test]
+    #[allow(clippy::approx_constant)]
     fn test_make_samples() {
         let waveform = sine_wave(3.1415);
         let samples = make_samples(3.0, 1, waveform);
-        assert_eq!(vec![0.0, 0.7764865126870779, 0.9785809043254725], samples);
+        assert_eq!(
+            vec![0.0, 0.776_486_512_687_077_9, 0.978_580_904_325_472_5],
+            samples
+        );
     }
 }

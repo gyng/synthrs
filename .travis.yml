@@ -11,9 +11,13 @@ addons:
       - libdw-dev
 before_script:
   - |
+      rustup component add clippy --toolchain=nightly ||
+      cargo install --git https://github.com/rust-lang/rust-clippy/ --force clippy
+  - |
       pip install 'travis-cargo<0.2' --user &&
       export PATH=$HOME/.local/bin:$PATH
 script:
+  - cargo clippy --all-targets --all-features -- -D warnings
   - |
       travis-cargo build &&
       travis-cargo test &&

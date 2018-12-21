@@ -49,7 +49,8 @@ fn main() {
         "out/comb.wav",
         44_100,
         &*quantize_samples::<i16>(comb_samples.as_slice()),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     let mut allpass = AllPass::new(1.0, 44_100, 0.5);
     let allpass_samples: Vec<f64> = sample
@@ -61,5 +62,6 @@ fn main() {
         "out/allpass.wav",
         44_100,
         &*quantize_samples::<i16>(allpass_samples.as_slice()),
-    ).expect("failed");
+    )
+    .expect("failed");
 }

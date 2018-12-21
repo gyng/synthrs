@@ -138,7 +138,7 @@ impl MidiTrack {
     fn new() -> MidiTrack {
         let events: Vec<MidiEvent> = Vec::new();
         MidiTrack {
-            events: events,
+            events,
             max_time: 0,
         }
     }
@@ -159,9 +159,9 @@ impl MidiEvent {
     // NoteOn with velocity 0 == NoteOff
     pub fn is_note_terminating(self) -> bool {
         (self.event_type == EventType::NoteOff)
-            || (self.event_type == EventType::NoteOn
-                && !self.value2.is_none()
-                && self.value2.unwrap_or(0) == 0)
+            || self.event_type == EventType::NoteOn
+                && self.value2.is_some()
+                && self.value2.unwrap_or(0) == 0
     }
 }
 
@@ -221,7 +221,7 @@ where
 {
     fn new(reader: &'a mut T) -> EventIterator<'a, T> {
         EventIterator {
-            reader: reader,
+            reader,
             time: 0,
             delta_time: 0,
             running_status: None,
@@ -257,8 +257,8 @@ where
             meta_event_type: None,
             time: self.time,
             channel: self.running_channel.unwrap_or(0),
-            value1: value1,
-            value2: value2,
+            value1,
+            value2,
         })
     }
 
@@ -430,7 +430,7 @@ where
 
             match self.get_event_length(self.running_status.unwrap()) {
                 length @ DataLength::Single | length @ DataLength::Double => {
-                    return Some(self.read_data_event(length))
+                    return Some(self.read_data_event(length));
                 }
                 DataLength::System => {
                     if let Some(system_event) = self.read_system_event() {
@@ -511,7 +511,7 @@ where
     for track in &song.tracks {
         for event in &track.events {
             if let Some(MetaEventType::TempoSetting) = event.meta_event_type {
-                song.bpm = (60000000.0 / event.value1 as f64) as f64;
+                song.bpm = (60_000_000.0 / event.value1 as f64) as f64;
                 break;
             }
         }
@@ -566,12 +566,10 @@ mod tests {
 
     #[test]
     fn it_parses_a_midi_file() {
-        let song = read_midi_file("tests/assets/test.mid")
-            .ok()
-            .expect("failed");
+        let song = read_midi_file("tests/assets/test.mid").expect("failed");
 
         assert_eq!(song.tracks.len(), 2); // metadata track included
-        let ref messages = song.tracks[1].events;
+        let messages = &song.tracks[1].events;
 
         // ProgramChange
         assert_eq!(messages[0].event_type, EventType::ProgramChange);
@@ -597,26 +595,20 @@ mod tests {
 
     #[test]
     fn it_parses_a_midi_file_with_multiple_tracks() {
-        let song = read_midi_file("tests/assets/multitrack.mid")
-            .ok()
-            .expect("failed");
+        let song = read_midi_file("tests/assets/multitrack.mid").expect("failed");
         assert_eq!(song.tracks.len(), 3);
     }
 
     #[test]
     fn it_parses_a_midi_file_with_running_status() {
-        let song = read_midi_file("tests/assets/running_status.mid")
-            .ok()
-            .expect("failed");
+        let song = read_midi_file("tests/assets/running_status.mid").expect("failed");
         assert_eq!(song.tracks.len(), 1);
         assert_eq!(song.max_time, 5640);
     }
 
     #[test]
     fn it_parses_the_bpm_of_a_midi_file() {
-        let song = read_midi_file("tests/assets/running_status.mid")
-            .ok()
-            .expect("failed");
+        let song = read_midi_file("tests/assets/running_status.mid").expect("failed");
         assert_eq!(song.bpm as usize, 160);
     }
 }

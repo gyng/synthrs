@@ -19,23 +19,26 @@ fn main() {
     write_pcm_file(
         "out/sine.pcm",
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, sine_wave(440.0))),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     // Write to a WAV file
     write_wav_file(
         "out/sine.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, sine_wave(440.0))),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     // `make_samples` takes in an Fn closure of type `|t: f64| -> f64`, where `t` = seconds
     write_wav_file(
         "out/sine_closure.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, |t| {
-            (t * 440.0 * 2.0 * 3.14159).sin()
+            (t * 440.0 * 2.0 * std::f64::consts::PI).sin()
         })),
-    ).expect("failed to write to file");
+    )
+    .expect("failed to write to file");
 
     // `quantize_samples` takes in an interator, which the `make_samples` function returns
     let sine_iter = SamplesIter::new(44_100, Box::new(sine_wave(440.0)));
@@ -43,43 +46,50 @@ fn main() {
         "out/sine_iter.wav",
         44_100,
         &quantize_samples::<i16>(sine_iter.take(44_100).collect::<Vec<f64>>().as_slice()),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     write_wav_file(
         "out/square.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, square_wave(440.0))),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     write_wav_file(
         "out/sawtooth.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, sawtooth_wave(440.0))),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     write_wav_file(
         "out/triangle.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, triangle_wave(440.0))),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     write_wav_file(
         "out/tangent.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, tangent_wave(440.0))),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     write_wav_file(
         "out/noise.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, noise())),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     write_wav_file(
         "out/organ.wav",
         44_100,
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, organ(440.0))),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     // Custom function for tone generation, t is in seconds
     write_wav_file(
@@ -88,7 +98,8 @@ fn main() {
         &quantize_samples::<i16>(&make_samples(1.0, 44_100, |t: f64| -> f64 {
             (square_wave(1000.0)(t) + square_wave(1020.0)(t)) / 2.0
         })),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     write_wav_file(
         "out/rising.wav",
@@ -100,7 +111,8 @@ fn main() {
             let f = max_f - (max_t - t) * range;
             sine_wave(f)(t)
         })),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     write_wav_file(
         "out/rising_wub.wav",
@@ -110,7 +122,8 @@ fn main() {
             44_100,
             rising_linear(440.0, 1760.0, 0.1),
         )),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     write_wav_file(
         "out/bell.wav",
@@ -118,7 +131,8 @@ fn main() {
         &quantize_samples::<i16>(&make_samples(10.0, 44_100, |t: f64| -> f64 {
             bell(200.0, 0.003, 0.5)(t)
         })),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     // Karplus-Strong introduces decay to the waveform
     write_wav_file(
@@ -129,7 +143,8 @@ fn main() {
             44_100,
             |t: f64| -> f64 { karplus_strong(sawtooth_wave(440.0), 0.01, 1.0, 0.9, 44_100.0)(t) },
         ))),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     // Using an "organ" we get a nice-sounding chime
     write_wav_file(
@@ -140,7 +155,8 @@ fn main() {
             44_100,
             |t: f64| -> f64 { karplus_strong(organ(440.0), 0.01, 1.0, 0.9, 44_100.0)(t) },
         ))),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     write_wav_file(
         "out/racecar.wav",
@@ -167,7 +183,8 @@ fn main() {
             } // Tree
             (out / 4.0).min(1.0)
         })),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     write_wav_file(
         "out/shepard.wav",
@@ -186,5 +203,6 @@ fn main() {
                 + tone_a4(t_mod))
                 / 4.0
         })),
-    ).expect("failed");
+    )
+    .expect("failed");
 }

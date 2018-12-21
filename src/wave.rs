@@ -61,11 +61,11 @@ pub fn bell(frequency: f64, attack: f64, decay: f64) -> impl Fn(f64) -> f64 {
             (0.92, 0.5, 2.0),
             (1.19, 0.25, 4.0),
             (1.71, 0.125, 6.0),
-            (2.00, 0.0625, 8.4),
-            (2.74, 0.03125, 10.8),
-            (3.00, 0.015625, 13.6),
-            (3.76, 0.0078125, 16.4),
-            (4.07, 0.00390625, 19.6),
+            (2.00, 0.062_5, 8.4),
+            (2.74, 0.031_25, 10.8),
+            (3.00, 0.015_625, 13.6),
+            (3.76, 0.007_812_5, 16.4),
+            (4.07, 0.003_906_25, 19.6),
         ];
 
         harmonics_table.iter().fold(0.0, |acc, h| {
@@ -258,6 +258,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn test_delay_line() {
         let identity = |t| t;
         let delayed = delay_line_generator(identity, 3.0, 1);

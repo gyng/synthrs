@@ -22,9 +22,11 @@ fn main() {
                 44_100,
                 true,
                 "examples/assets/octave.mid",
-            ).unwrap(),
+            )
+            .unwrap(),
         ),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     // Pass in any generator to `make_samples_from_midi_file`!
     write_wav_file(
@@ -36,9 +38,11 @@ fn main() {
                 44_100,
                 false,
                 "examples/assets/octave.mid",
-            ).unwrap(),
+            )
+            .unwrap(),
         ),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     // Use a sample to generate music!
     // This is a YAMAHA SY35 sample grabbed from http://legowelt.org/samples/
@@ -57,9 +61,11 @@ fn main() {
                 44_100,
                 false,
                 "examples/assets/octave.mid",
-            ).unwrap(),
+            )
+            .unwrap(),
         ),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     // This is a YAMAHA SY35 sample grabbed from http://legowelt.org/samples/
     let (clarinet_sample, clarinet_sample_len) =
@@ -83,9 +89,11 @@ fn main() {
                 44_100,
                 false,
                 "examples/assets/octave.mid",
-            ).unwrap(),
+            )
+            .unwrap(),
         ),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     write_wav_file(
         "out/octave_bell.wav",
@@ -96,9 +104,11 @@ fn main() {
                 44_100,
                 false,
                 "examples/assets/octave.mid",
-            ).unwrap(),
+            )
+            .unwrap(),
         ),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     // Manually parse and synthesise MIDI files
     // The `make_samples_from_midi` function works on an already-parsed MIDI file
@@ -110,7 +120,8 @@ fn main() {
         &quantize_samples::<i16>(
             &make_samples_from_midi(wave::square_wave, 44_100, false, song).unwrap(),
         ),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     // Seikilos: the oldest known surviving musical composition
     // https://en.wikipedia.org/wiki/Seikilos_epitaph
@@ -125,9 +136,11 @@ fn main() {
                 44_100,
                 true,
                 "examples/assets/seikilos.mid",
-            ).unwrap(),
+            )
+            .unwrap(),
         ),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     // Johann Strauss II - The Blue Danube
     write_wav_file(
@@ -139,9 +152,11 @@ fn main() {
                 44_100,
                 true,
                 "examples/assets/danube.mid",
-            ).unwrap(),
+            )
+            .unwrap(),
         ),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     // Grieg - In the Hall of the Mountain King
     write_wav_file(
@@ -153,9 +168,11 @@ fn main() {
                 44_100,
                 true,
                 "examples/assets/mountainking.mid",
-            ).unwrap(),
+            )
+            .unwrap(),
         ),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     // Satie - Gymnopédies No. 1 using a piano sample
     write_wav_file(
@@ -167,9 +184,11 @@ fn main() {
                 44_100,
                 false,
                 "examples/assets/gymnopedie1.mid",
-            ).unwrap(),
+            )
+            .unwrap(),
         ),
-    ).expect("failed");
+    )
+    .expect("failed");
 
     // Christian Sinding - Rustle of Spring (Frühlingsrauschen)
     write_wav_file(
@@ -181,7 +200,9 @@ fn main() {
                 44_100,
                 true,
                 "examples/assets/rustle.mid",
-            ).unwrap(),
+            )
+            .unwrap(),
         ),
-    ).expect("failed");
+    )
+    .expect("failed");
 }
