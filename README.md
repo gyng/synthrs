@@ -6,6 +6,8 @@
 
 Toy synthesiser library in Rust. Requires Rust nightly for now (ie. does not compile on stable).
 
+For programmatic playback, please check out the [cpal integration](https://github.com/gyng/midcat).
+
 ## Features
 
 * Not too difficult syntax for writing your own tones (see examples)
