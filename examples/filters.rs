@@ -51,10 +51,7 @@ fn main() {
     .expect("failed");
 
     let mut allpass = AllPass::new(1.0, 44_100, 0.5);
-    let allpass_samples: Vec<f64> = sample
-        .into_iter()
-        .map(|s| allpass.tick(s))
-        .collect();
+    let allpass_samples: Vec<f64> = sample.into_iter().map(|s| allpass.tick(s)).collect();
     write_wav_file(
         "out/allpass.wav",
         44_100,
