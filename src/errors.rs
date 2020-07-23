@@ -1,6 +1,5 @@
 //! Error types and trait implementation
 
-use std;
 use std::error;
 use std::fmt;
 use std::io;

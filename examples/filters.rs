@@ -52,7 +52,6 @@ fn main() {
 
     let mut allpass = AllPass::new(1.0, 44_100, 0.5);
     let allpass_samples: Vec<f64> = sample
-        .clone()
         .into_iter()
         .map(|s| allpass.tick(s))
         .collect();
