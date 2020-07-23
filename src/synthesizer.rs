@@ -160,12 +160,15 @@ where
 pub struct SamplesIter {
     i: u64,
     sample_rate: u64,
-    waveform: Box<Fn(f64) -> f64 + Send + 'static>,
+    waveform: Box<dyn Fn(f64) -> f64 + Send + 'static>,
 }
 
 impl SamplesIter {
     /// Returns an iterator that generates samples for the waveform at the given sample rate
-    pub fn new(sample_rate: u64, waveform: Box<Fn(f64) -> f64 + Send + 'static>) -> SamplesIter {
+    pub fn new(
+        sample_rate: u64,
+        waveform: Box<dyn Fn(f64) -> f64 + Send + 'static>,
+    ) -> SamplesIter {
         SamplesIter {
             i: 0,
             sample_rate,
