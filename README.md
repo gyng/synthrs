@@ -1,7 +1,5 @@
 # synthrs
 
-[![Build Status](https://travis-ci.org/gyng/synthrs.svg?branch=master)](https://travis-ci.org/gyng/synthrs)
-
 [Documentation](https://gyng.github.io/synthrs)
 
 Toy synthesiser library in Rust. Requires Rust nightly for now (ie. does not compile on stable).
