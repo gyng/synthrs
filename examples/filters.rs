@@ -1,4 +1,3 @@
-#![feature(unboxed_closures)]
 
 extern crate synthrs;
 

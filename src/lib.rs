@@ -1,4 +1,3 @@
-#![feature(fn_traits, unboxed_closures)]
 #![allow(dead_code)]
 
 pub mod errors;

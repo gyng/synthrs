@@ -114,7 +114,7 @@ pub fn generate<F>(t: f64, f: &F) -> f64
 where
     F: Fn(f64) -> f64,
 {
-    f.call((t,))
+    f(t)
 }
 
 /// Given a generator waveform, returns a `Vec<f64>` of raw samples (not normalised or quantised)
@@ -183,7 +183,7 @@ impl Iterator for SamplesIter {
     fn next(&mut self) -> Option<f64> {
         let t = self.i as f64 / self.sample_rate as f64;
         self.i += 1;
-        Some(self.waveform.call((t,)))
+        Some((self.waveform)(t))
     }
 }
 

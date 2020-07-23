@@ -2,7 +2,7 @@
 
 [Documentation](https://gyng.github.io/synthrs)
 
-Toy synthesiser library in Rust. Requires Rust nightly for now (ie. does not compile on stable).
+Toy synthesiser library in Rust.
 
 For programmatic playback, please check out the [cpal integration](https://github.com/gyng/midcat).
 

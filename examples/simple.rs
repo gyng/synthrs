@@ -1,5 +1,3 @@
-#![feature(unboxed_closures)]
-
 extern crate synthrs;
 
 use synthrs::synthesizer::{make_samples, peak_normalize, quantize_samples, SamplesIter};
