@@ -32,7 +32,6 @@ For programmatic playback, please check out the [cpal integration](https://githu
 * [gymnopedie](examples/assets/gymnopedie_sampler.ogg) *piano sample*
 * [rustle](examples/assets/rustle.ogg)
 * [clarinet sample](examples/assets/octave_clarinet_sampler.ogg)
-* [assorted synthesized MIDIs](http://sugoi.pw/samples/) *pure square waves*
 
 ## Try
 
