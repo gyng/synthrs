@@ -1,10 +1,8 @@
 # synthrs
 
-[![Build Status](https://travis-ci.org/gyng/synthrs.svg?branch=master)](https://travis-ci.org/gyng/synthrs)
-
 [Documentation](https://gyng.github.io/synthrs)
 
-Toy synthesiser library in Rust. Requires Rust nightly for now (ie. does not compile on stable).
+Toy synthesiser library in Rust.
 
 For programmatic playback, please check out the [cpal integration](https://github.com/gyng/midcat).
 
@@ -34,7 +32,6 @@ For programmatic playback, please check out the [cpal integration](https://githu
 * [gymnopedie](examples/assets/gymnopedie_sampler.ogg) *piano sample*
 * [rustle](examples/assets/rustle.ogg)
 * [clarinet sample](examples/assets/octave_clarinet_sampler.ogg)
-* [assorted synthesized MIDIs](http://sugoi.pw/samples/) *pure square waves*
 
 ## Try
 

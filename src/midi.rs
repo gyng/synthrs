@@ -477,7 +477,6 @@ pub fn read_midi_file<P: AsRef<Path>>(path: P) -> Result<MidiSong> {
 ///
 /// From a `&[u8]`
 /// ```
-/// #![feature(bufreader_buffer)]
 /// use synthrs::midi::read_midi;
 /// use std::fs::File;
 /// use std::io::{Cursor, Seek, BufReader, Read};

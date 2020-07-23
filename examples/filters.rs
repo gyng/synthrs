@@ -1,5 +1,3 @@
-#![feature(unboxed_closures)]
-
 extern crate synthrs;
 
 use synthrs::filter::*;

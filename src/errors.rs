@@ -29,14 +29,7 @@ impl fmt::Display for SynthrsError {
 }
 
 impl error::Error for SynthrsError {
-    fn description(&self) -> &str {
-        match *self {
-            SynthrsError::Parse(ref token) => token,
-            SynthrsError::Io(ref err) => err.description(),
-        }
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         match *self {
             SynthrsError::Parse(ref _token) => None,
             SynthrsError::Io(ref err) => err.source(),

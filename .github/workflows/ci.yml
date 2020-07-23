@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up test
+        run: "rustup component add clippy && rustup component add rustfmt"
+      # - name: Install target dependencies
+      #   run: "sudo apt-get install xxx"
+      - name: Check
+        run: "cargo check"
+      - name: Build
+        run: "cargo build --verbose"
+      - name: Run tests
+        run: "RUST_BACKTRACE=1 cargo test --verbose"
+      # - name: Check features
+      #   run: "check --no-default-features"
+      - name: Check formatting
+        run: "cargo fmt --all -- --check"
+      - name: Run static analysis (clippy)
+        run: "cargo clippy --all-targets"
+      # - run: "cargo audit"
