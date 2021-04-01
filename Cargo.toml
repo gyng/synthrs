@@ -11,7 +11,7 @@ edition = "2018"
 [dependencies]
 
 byteorder = "1.2.7"
-num = "0.3.0"
+num = "0.4.0"
 rand = "0.7.3"
 
 [lib]
