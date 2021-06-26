@@ -1,0 +1,35 @@
+name: Doc
+
+on:
+  push: { branches: [main, master] }
+
+jobs:
+  docs:
+    name: Deploy docs
+    runs-on: ubuntu-latest
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_NET_RETRY: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+      - name: Build
+        run: |
+          cargo doc --no-deps --all-features
+          echo "<meta http-equiv=\"refresh\" content=\"0; URL=synthrs/index.html\"/>" > target/doc/index.html
+        #                                                     ^ set "NAME" to your crate name
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: docs
+          publish_dir: ./target/doc
+          force_orphan: true
+          user_name: "github-actions[bot]"
+          user_email: "github-actions[bot]@users.noreply.github.com"
