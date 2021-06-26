@@ -1,0 +1,137 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/music.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>music.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><script src="../../crates.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../synthrs/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1"> 1</span>
+<span id="2"> 2</span>
+<span id="3"> 3</span>
+<span id="4"> 4</span>
+<span id="5"> 5</span>
+<span id="6"> 6</span>
+<span id="7"> 7</span>
+<span id="8"> 8</span>
+<span id="9"> 9</span>
+<span id="10">10</span>
+<span id="11">11</span>
+<span id="12">12</span>
+<span id="13">13</span>
+<span id="14">14</span>
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+</pre><div class="example-wrap"><pre class="rust ">
+<span class="doccomment">//! Functions for calculating frequencies based off notes and tuning</span>
+
+<span class="doccomment">/// Calculates the frequency (equal-tempered) given A4, the semitone and the octave.</span>
+<span class="doccomment">/// C4 = `note(440.0, 0u, 4u)`</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// ### Semitone table</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///  0 C</span>
+<span class="doccomment">///  1 C#</span>
+<span class="doccomment">///  2 D</span>
+<span class="doccomment">///  3 D#</span>
+<span class="doccomment">///  4 E</span>
+<span class="doccomment">///  5 F</span>
+<span class="doccomment">///  6 F#</span>
+<span class="doccomment">///  7 G</span>
+<span class="doccomment">///  8 G#</span>
+<span class="doccomment">///  9 A</span>
+<span class="doccomment">/// 10 B</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">note</span>(<span class="ident">a4</span>: <span class="ident">f64</span>, <span class="ident">semitone</span>: <span class="ident">usize</span>, <span class="ident">octave</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">f64</span> {
+    <span class="kw">let</span> <span class="ident">semitones_from_a4</span> <span class="op">=</span> <span class="ident">octave</span> <span class="kw">as</span> <span class="ident">isize</span> <span class="op">*</span> <span class="number">12</span> <span class="op">+</span> <span class="ident">semitone</span> <span class="kw">as</span> <span class="ident">isize</span> <span class="op">-</span> <span class="number">9</span> <span class="op">-</span> <span class="number">48</span>;
+    <span class="ident">a4</span> <span class="op">*</span> (<span class="ident">semitones_from_a4</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">*</span> <span class="number">2.0f64</span>.<span class="ident">ln</span>() <span class="op">/</span> <span class="number">12.0</span>).<span class="ident">exp</span>()
+}
+
+<span class="doccomment">/// Calculates the frequency (equal-tempered) given A4 and the MIDI note value.</span>
+<span class="doccomment">/// C4 = `note_midi(440.0, 60u)`</span>
+<span class="doccomment">/// A4 = `note_midi(440.0, 69u)`</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">note_midi</span>(<span class="ident">a4</span>: <span class="ident">f64</span>, <span class="ident">midi_note</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">f64</span> {
+    <span class="kw">let</span> <span class="ident">semitone</span> <span class="op">=</span> <span class="ident">midi_note</span> <span class="op">%</span> <span class="number">12</span>;
+    <span class="kw">let</span> <span class="ident">octave</span> <span class="op">=</span> (<span class="ident">midi_note</span> <span class="op">/</span> <span class="number">12</span>) <span class="op">-</span> <span class="number">1</span>;
+    <span class="ident">note</span>(<span class="ident">a4</span>, <span class="ident">semitone</span>, <span class="ident">octave</span>)
+}
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
+<span class="kw">mod</span> <span class="ident">tests</span> {
+    <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">it_equal_tempers</span>() {
+        <span class="kw">let</span> <span class="ident">threshold</span> <span class="op">=</span> <span class="number">0.1</span>;
+        <span class="kw">let</span> <span class="ident">c4</span> <span class="op">=</span> <span class="number">261.63</span>;
+        <span class="kw">let</span> <span class="ident">a4</span> <span class="op">=</span> <span class="number">440.0</span>;
+        <span class="kw">let</span> <span class="ident">a3</span> <span class="op">=</span> <span class="number">220.0</span>;
+        <span class="kw">let</span> <span class="ident">d3</span> <span class="op">=</span> <span class="number">146.83</span>;
+        <span class="kw">let</span> <span class="ident">fs6</span> <span class="op">=</span> <span class="number">1479.98</span>;
+        <span class="macro">assert!</span>((<span class="ident">note</span>(<span class="ident">a4</span>, <span class="number">9</span>, <span class="number">4</span>) <span class="op">-</span> <span class="ident">a4</span>).<span class="ident">abs</span>() <span class="op">&lt;</span> <span class="ident">threshold</span>);
+        <span class="macro">assert!</span>((<span class="ident">note</span>(<span class="ident">a4</span>, <span class="number">9</span>, <span class="number">3</span>) <span class="op">-</span> <span class="ident">a3</span>).<span class="ident">abs</span>() <span class="op">&lt;</span> <span class="ident">threshold</span>);
+        <span class="macro">assert!</span>((<span class="ident">note</span>(<span class="ident">a4</span>, <span class="number">0</span>, <span class="number">4</span>) <span class="op">-</span> <span class="ident">c4</span>).<span class="ident">abs</span>() <span class="op">&lt;</span> <span class="ident">threshold</span>);
+        <span class="macro">assert!</span>((<span class="ident">note</span>(<span class="ident">a4</span>, <span class="number">2</span>, <span class="number">3</span>) <span class="op">-</span> <span class="ident">d3</span>).<span class="ident">abs</span>() <span class="op">&lt;</span> <span class="ident">threshold</span>);
+        <span class="macro">assert!</span>((<span class="ident">note</span>(<span class="ident">a4</span>, <span class="number">6</span>, <span class="number">6</span>) <span class="op">-</span> <span class="ident">fs6</span>).<span class="ident">abs</span>() <span class="op">&lt;</span> <span class="ident">threshold</span>);
+        <span class="macro">assert!</span>((<span class="ident">note</span>(<span class="ident">a4</span>, <span class="number">9</span>, <span class="number">4</span>) <span class="op">-</span> <span class="ident">c4</span>).<span class="ident">abs</span>() <span class="op">&gt;</span> <span class="ident">threshold</span>);
+    }
+
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">it_gets_frequency_for_a_midi_note</span>() {
+        <span class="kw">let</span> <span class="ident">threshold</span> <span class="op">=</span> <span class="number">0.1</span>;
+        <span class="kw">let</span> <span class="ident">a4</span> <span class="op">=</span> <span class="number">440.0</span>;
+        <span class="kw">let</span> <span class="ident">a4_note</span> <span class="op">=</span> <span class="number">69</span>;
+        <span class="kw">let</span> <span class="ident">a3_note</span> <span class="op">=</span> <span class="number">57</span>;
+        <span class="kw">let</span> <span class="ident">c4_note</span> <span class="op">=</span> <span class="number">60</span>;
+
+        <span class="macro">assert!</span>((<span class="ident">note</span>(<span class="ident">a4</span>, <span class="number">9</span>, <span class="number">4</span>) <span class="op">-</span> <span class="ident">note_midi</span>(<span class="ident">a4</span>, <span class="ident">a4_note</span>)).<span class="ident">abs</span>() <span class="op">&lt;</span> <span class="ident">threshold</span>);
+        <span class="macro">assert!</span>((<span class="ident">note</span>(<span class="ident">a4</span>, <span class="number">9</span>, <span class="number">3</span>) <span class="op">-</span> <span class="ident">note_midi</span>(<span class="ident">a4</span>, <span class="ident">a3_note</span>)).<span class="ident">abs</span>() <span class="op">&lt;</span> <span class="ident">threshold</span>);
+        <span class="macro">assert!</span>((<span class="ident">note</span>(<span class="ident">a4</span>, <span class="number">9</span>, <span class="number">4</span>) <span class="op">-</span> <span class="ident">note_midi</span>(<span class="ident">a4</span>, <span class="ident">c4_note</span>)).<span class="ident">abs</span>() <span class="op">&gt;</span> <span class="ident">threshold</span>);
+    }
+}
+</pre></div>
+</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="synthrs" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
+    <script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script></body></html>

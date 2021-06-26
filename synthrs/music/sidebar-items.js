@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["note","Calculates the frequency (equal-tempered) given A4, the semitone and the octave. C4 = `note(440.0, 0u, 4u)`"],["note_midi","Calculates the frequency (equal-tempered) given A4 and the MIDI note value. C4 = `note_midi(440.0, 60u)` A4 = `note_midi(440.0, 69u)`"]]});
