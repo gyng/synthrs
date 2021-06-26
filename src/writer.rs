@@ -277,20 +277,20 @@ where
     }
 
     let wave = Wave {
-        audio_format,
-        bits_per_sample,
-        block_align,
-        byte_rate,
         chunk_id,
         chunk_size,
         format,
-        num_channels,
-        pcm,
-        sample_rate,
         subchunk_1_id,
         subchunk_1_size,
+        audio_format,
+        num_channels,
+        sample_rate,
+        byte_rate,
+        block_align,
+        bits_per_sample,
         subchunk_2_id,
         subchunk_2_size,
+        pcm,
     };
 
     Ok(wave)
