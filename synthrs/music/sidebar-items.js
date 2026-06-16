@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["note","note_midi"]};

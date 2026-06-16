@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["bell","delay_line_generator","karplus_strong","noise","organ","rising_linear","sampler","sawtooth_wave","sine_wave","square_wave","tangent_wave","triangle_wave"]};

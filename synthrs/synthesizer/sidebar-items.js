@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["generate","make_samples","make_samples_from_midi","make_samples_from_midi_file","peak_normalize","quantize","quantize_samples","unquantize","unquantize_samples"],"struct":["SamplesIter"]};

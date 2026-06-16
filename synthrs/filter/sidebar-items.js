@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["add","bandpass_filter","bandreject_filter","blackman_window","convolve","cutoff_from_frequency","envelope","highpass_filter","lowpass_filter","spectral_invert"],"struct":["AllPass","Comb","DelayLine"]};

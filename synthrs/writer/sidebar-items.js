@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["read_wav","read_wav_file","write_pcm","write_pcm_file","write_wav","write_wav_file"],"struct":["Wave"]};

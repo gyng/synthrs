@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["samples_from_wave","samples_from_wave_bytes","samples_from_wave_file"]};

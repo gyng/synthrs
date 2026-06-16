@@ -1,0 +1,62 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A collection of signal filters."><title>synthrs::filter - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-17e0aaed.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="synthrs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.96.0 (ac68faa20 2026-05-25)" data-channel="1.96.0" data-search-js="search-b5634cc7.js" data-stringdex-js="stringdex-2da4960a.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-5013f961.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module filter</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../synthrs/index.html">synthrs</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module filter</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#stateless-filters" title="Stateless filters">Stateless filters</a><ul><li><a href="#common-stateless-filter-arguments" title="Common stateless filter arguments:">Common stateless filter arguments:</a></li></ul></li><li><a href="#stateful-filters" title="Stateful filters">Stateful filters</a></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate synthrs</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">synthrs</a></div><h1>Module <span>filter</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/synthrs/filter.rs.html#1-389">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A collection of signal filters.</p>
+<p>To filter a bunch of samples, first create the filter and samples.</p>
+<p>There are two types of filters: stateless, and stateful filters.
+Stateless filters can be used to convolve samples, while stateful filters transform individual samples.</p>
+<h4 id="stateless-filters"><a class="doc-anchor" href="#stateless-filters">§</a>Stateless filters</h4>
+<p>Stateless filters are pure functions and are used in conjunction with the convolve function:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>synthrs::filter::{convolve, cutoff_from_frequency, lowpass_filter};
+<span class="kw">use </span>synthrs::synthesizer::{quantize_samples, make_samples};
+<span class="kw">use </span>synthrs::wave::sine_wave;
+
+<span class="comment">// Generate a bunch of samples at two different frequencies
+</span><span class="kw">let </span>samples = make_samples(<span class="number">0.5</span>, <span class="number">44_100</span>, |t: f64| -&gt; f64 {
+    <span class="number">0.5 </span>* (sine_wave(<span class="number">6000.0</span>)(t) + sine_wave(<span class="number">80.0</span>)(t))
+});
+
+<span class="comment">// Create a lowpass filter, using a cutoff of 400Hz at a 44_100Hz sample rate (ie. filter out frequencies &gt;400Hz)
+</span><span class="kw">let </span>lowpass = lowpass_filter(cutoff_from_frequency(<span class="number">400.0</span>, <span class="number">44_100</span>), <span class="number">0.01</span>);
+
+<span class="comment">// Apply convolution to filter out high frequencies
+</span><span class="kw">let </span>lowpass_samples = quantize_samples::&lt;i16&gt;(<span class="kw-2">&amp;</span>convolve(<span class="kw-2">&amp;</span>lowpass, <span class="kw-2">&amp;</span>samples));</code></pre></div><h5 id="common-stateless-filter-arguments"><a class="doc-anchor" href="#common-stateless-filter-arguments">§</a>Common stateless filter arguments:</h5>
+<ul>
+<li><code>cutoff</code>: as a fraction of sample rate, can be obtained from
+<code>cutoff_from_frequency(cutoff, sample_rate)</code>. (eg. for a lowpass filter
+frequencies below <code>sample_rate</code> / <code>cutoff</code> are preserved)</li>
+<li><code>band</code>: transition band as a fraction of the sample rate. This determines how
+the cutoff “blends”, or how harsh a cutoff this is.</li>
+</ul>
+<h4 id="stateful-filters"><a class="doc-anchor" href="#stateful-filters">§</a>Stateful filters</h4>
+<p>Stateful filters are structs which hold some state, such as <code>DelayLine</code> which has to
+keep in memory historical samples.</p>
+<p>They can be used to transform a bunch of samples using <code>map</code>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>synthrs::filter::Comb;
+<span class="kw">use </span>synthrs::synthesizer::{quantize_samples, make_samples};
+<span class="kw">use </span>synthrs::wave::sine_wave;
+
+<span class="comment">// Creates a comb filter with
+// * 0.2 second delay
+// * 44100Hz,
+// * 0.5 dampening inverse factor
+// * 0.5 dampening factor
+// * 0.5 feedback factor
+</span><span class="kw">let </span><span class="kw-2">mut </span>comb = Comb::new(<span class="number">0.2</span>, <span class="number">44_100</span>, <span class="number">0.5</span>, <span class="number">0.5</span>, <span class="number">0.5</span>);
+
+<span class="kw">let </span>samples = make_samples(<span class="number">0.5</span>, <span class="number">44_100</span>, |t: f64| -&gt; f64 { sine_wave(<span class="number">440.0</span>)(t) });
+
+<span class="kw">let </span>filtered_raw: Vec&lt;f64&gt; = samples
+    .into_iter()
+    .map(|sample| comb.tick(sample))
+    .collect();
+<span class="kw">let </span>filtered_quantized = quantize_samples::&lt;i16&gt;(<span class="kw-2">&amp;</span>filtered_raw);</code></pre></div>
+<p>See: <code>examples/filters.rs</code></p>
+<p>An all-poss filter is implemented as a generator in <code>crate::wave::allpass</code>.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.AllPass.html" title="struct synthrs::filter::AllPass">AllPass</a></dt><dd>A stateful all-pass filter.</dd><dt><a class="struct" href="struct.Comb.html" title="struct synthrs::filter::Comb">Comb</a></dt><dd>A stateful comb filter.</dd><dt><a class="struct" href="struct.DelayLine.html" title="struct synthrs::filter::DelayLine">Delay<wbr>Line</a></dt><dd>A stateful delay line. Samples are delayed for <code>delay_length</code> seconds.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.add.html" title="fn synthrs::filter::add">add</a></dt><dd>Performs elementwise addition of two <code>Vec&lt;f64&gt;</code>s. Can be used to combine filters together
+(eg. combining a low-pass filter with a high-pass filter to create a band-pass filter)</dd><dt><a class="fn" href="fn.bandpass_filter.html" title="fn synthrs::filter::bandpass_filter">bandpass_<wbr>filter</a></dt><dd>Creates a low-pass filter. Frequencies between <code>low_frequency</code> and <code>high_frequency</code>
+are preserved when samples are convolved with this filter.</dd><dt><a class="fn" href="fn.bandreject_filter.html" title="fn synthrs::filter::bandreject_filter">bandreject_<wbr>filter</a></dt><dd>Creates a low-pass filter. Frequencies outside of <code>low_frequency</code> and <code>high_frequency</code>
+are preserved when samples are convolved with this filter.</dd><dt><a class="fn" href="fn.blackman_window.html" title="fn synthrs::filter::blackman_window">blackman_<wbr>window</a></dt><dd>Creates a Blackman window filter of a given size.</dd><dt><a class="fn" href="fn.convolve.html" title="fn synthrs::filter::convolve">convolve</a></dt><dt><a class="fn" href="fn.cutoff_from_frequency.html" title="fn synthrs::filter::cutoff_from_frequency">cutoff_<wbr>from_<wbr>frequency</a></dt><dd>Returns the cutoff fraction for a given cutoff frequency at a sample rate, which can be
+used for filter creation.</dd><dt><a class="fn" href="fn.envelope.html" title="fn synthrs::filter::envelope">envelope</a></dt><dd>Simple linear attack/decay envelope. No sustain or release.</dd><dt><a class="fn" href="fn.highpass_filter.html" title="fn synthrs::filter::highpass_filter">highpass_<wbr>filter</a></dt><dd>Creates a high-pass filter. Frequencies above the cutoff are preserved when
+samples are convolved with this filter.</dd><dt><a class="fn" href="fn.lowpass_filter.html" title="fn synthrs::filter::lowpass_filter">lowpass_<wbr>filter</a></dt><dd>Creates a low-pass filter. Frequencies below the cutoff are preserved when
+samples are convolved with this filter.</dd><dt><a class="fn" href="fn.spectral_invert.html" title="fn synthrs::filter::spectral_invert">spectral_<wbr>invert</a></dt><dd>Given a filter, inverts it. For example, inverting a low-pass filter will result in a
+high-pass filter with the same cutoff frequency.</dd></dl></section></div></main></body></html>
